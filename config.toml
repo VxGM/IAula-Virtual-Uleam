@@ -1,0 +1,7 @@
+# IAula — config base (no secreta). Secretos → config.local.toml (gitignored).
+
+[portal]
+base_url = "https://aulavirtualmoodle.uleam.edu.ec"
+
+[chat]
+model = "gpt-5.4-mini"

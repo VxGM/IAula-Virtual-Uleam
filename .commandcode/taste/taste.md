@@ -1,0 +1,8 @@
+- Communicates in Spanish and expects the agent to reply in Spanish. Confidence: 0.8
+- University student who wants to automate study workflows via an AI agent (check virtual classroom courses, download PDFs/docs, send them to NotebookLM, track assignment deadlines). Confidence: 0.5
+- Is on the CommandCode GOAT plan and asks the agent for model recommendations restricted to what that plan includes. Confidence: 0.4
+- Studies at Universidad Laica Eloy Alfaro de Manabí (ULEAM); the "aula virtual" is a Moodle instance at aulavirtualmoodle.uleam.edu.ec that authenticates via university Microsoft 365 (OIDC), not a local username/password form. Confidence: 0.7
+- Uses Google NotebookLM as a study tool and expects it driven through the `notebooklm` CLI integration; browses with Brave where an active Google session lives. Confidence: 0.5
+- Writes brief, sparse prompts (e.g. just "continua", or a one-line feature request) and expects the agent to plan first and then drive the implementation autonomously (including diagnosing and working around environment/tooling failures). Confidence: 0.7
+- Uses OpenAI's API (with their own key) to add LLM/chat features; expects secrets kept out of version control in a gitignored local config (`config.local.toml`) while shared/non-secret settings live in the committed `config.toml` (with a `.example` template for keys). Confidence: 0.45
+- Wants low-friction startup: prefers ready-made double-click launchers (e.g. a `Panel.bat`) and simple step-by-step "how to run" instructions documented in the README over recalling and typing commands. Confidence: 0.5

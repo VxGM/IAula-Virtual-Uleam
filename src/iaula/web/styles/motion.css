@@ -1,0 +1,257 @@
+/* ---------- Capas de escena ---------- */
+.fx {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#fx-orbs { z-index: 0; }
+#fx-bubbles { z-index: 0; }
+#fx-bokeh { z-index: -1; }
+
+.lens-flare {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(circle 340px at var(--mx) var(--my), rgba(255, 255, 255, 0.20), transparent 62%),
+    radial-gradient(circle 110px at var(--mx) var(--my), rgba(255, 255, 255, 0.30), transparent 65%);
+}
+
+/* ---------- Orbes ---------- */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%,
+    rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.35) 18%,
+    rgba(120, 200, 255, 0.55) 42%, rgba(180, 230, 255, 0.18) 70%, rgba(255, 255, 255, 0.04) 100%);
+  box-shadow:
+    inset -10px -16px 30px rgba(2, 100, 160, 0.22),
+    inset 0 0 20px rgba(255, 255, 255, 0.25),
+    0 14px 40px rgba(255, 255, 255, 0.16);
+  animation: float 10s ease-in-out infinite;
+  will-change: transform;
+}
+
+.orb::before {
+  content: "";
+  position: absolute;
+  top: 6%;
+  left: 14%;
+  width: 40%;
+  height: 24%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse 100% 100% at 30% 30%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 70%);
+}
+
+.orb-1 { width: 120px; height: 120px; top: 15%; left: 3%; --pf: 0.5; animation-delay: 0s; }
+.orb-2 { width: 64px; height: 64px; top: 56%; right: 5%; --pf: 0.8; animation-delay: 2.2s; }
+.orb-3 { width: 92px; height: 92px; bottom: 20%; left: 8%; --pf: 0.35; animation-delay: 4.1s; }
+.orb-4 { width: 40px; height: 40px; top: 30%; right: 16%; --pf: 1.1; animation-delay: 1.4s; }
+
+@keyframes float {
+  0%, 100% { transform: translate3d(calc(var(--par-x) * var(--pf)), calc(var(--par-y) * var(--pf)), 0) scale(1); }
+  50% { transform: translate3d(calc(var(--par-x) * var(--pf) + 5px), calc(var(--par-y) * var(--pf) - 26px), 0) scale(1.06); }
+}
+
+/* ---------- Burbujas ---------- */
+.bubble {
+  position: absolute;
+  bottom: -12vh;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.28) 22%, rgba(255, 255, 255, 0.05) 45%),
+    radial-gradient(circle at 68% 78%, rgba(255, 255, 255, 0.3), transparent 55%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.04), rgba(180, 230, 255, 0.14));
+  box-shadow:
+    inset 0 0 10px rgba(255, 255, 255, 0.45),
+    inset -3px -3px 8px rgba(120, 200, 255, 0.2),
+    0 0 8px rgba(255, 255, 255, 0.16);
+  animation: bubble-rise var(--dur, 16s) linear var(--delay, 0s) infinite;
+}
+
+@keyframes bubble-rise {
+  0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0; }
+  7% { opacity: var(--op, 0.75); }
+  50% { transform: translate3d(var(--drift, 24px), -55vh, 0) scale(1.04); }
+  100% { transform: translate3d(calc(var(--drift, 24px) * -0.6), -118vh, 0) scale(1.08); opacity: 0; }
+}
+
+/* ---------- Bokeh ---------- */
+.bokeh-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 70%);
+  mix-blend-mode: screen;
+  filter: blur(2px);
+  animation: bokeh-pulse var(--dur, 9s) ease-in-out var(--delay, 0s) infinite alternate;
+}
+
+@keyframes bokeh-pulse {
+  from { opacity: 0.2; transform: translate3d(0, 0, 0) scale(1); }
+  to { opacity: 0.65; transform: translate3d(var(--dx, 12px), var(--dy, -18px), 0) scale(1.14); }
+}
+
+/* ---------- Peces ---------- */
+.fish {
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+  animation: fish-swim var(--dur, 30s) linear var(--delay, 0s) infinite;
+  opacity: var(--op, 0.85);
+}
+
+.fish-tail {
+  transform-origin: right center;
+  animation: tail-wag 0.75s ease-in-out infinite alternate;
+}
+
+@keyframes fish-swim {
+  0% { transform: translate3d(-14vw, 0, 0) scaleX(var(--dir, 1)); }
+  25% { transform: translate3d(24vw, -3vh, 0) scaleX(var(--dir, 1)); }
+  50% { transform: translate3d(54vw, 2vh, 0) scaleX(var(--dir, 1)); }
+  75% { transform: translate3d(84vw, -2vh, 0) scaleX(var(--dir, 1)); }
+  100% { transform: translate3d(116vw, 1vh, 0) scaleX(var(--dir, 1)); }
+}
+
+@keyframes tail-wag {
+  from { transform: rotate(-14deg); }
+  to { transform: rotate(14deg); }
+}
+
+/* ---------- Césped al pie ---------- */
+#fx-grass {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 1;
+  pointer-events: none;
+  height: 84px;
+}
+
+#fx-grass svg { display: block; width: 100%; height: 100%; }
+
+.grass-sway { transform-origin: bottom center; animation: grass-sway 6s ease-in-out infinite alternate; }
+.grass-sway--slow { animation-duration: 9s; animation-delay: -3s; }
+
+@keyframes grass-sway {
+  from { transform: skewX(-1.6deg); }
+  to { transform: skewX(1.6deg); }
+}
+
+/* ---------- Ripple click ---------- */
+.ripple-ring {
+  position: fixed;
+  z-index: 350;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.45), inset 0 0 24px rgba(255, 255, 255, 0.28);
+  pointer-events: none;
+  animation: ripple 0.8s var(--ease-aero) forwards;
+  width: 240px;
+  height: 240px;
+  margin: -120px 0 0 -120px;
+}
+
+@keyframes ripple {
+  from { transform: scale(0.05); opacity: 0.95; }
+  to { transform: scale(1); opacity: 0; }
+}
+
+/* ---------- Barrido de brillo en cards ---------- */
+.shine { position: relative; overflow: hidden; }
+
+.shine::before {
+  content: "";
+  position: absolute;
+  inset: -60% auto -60% -30%;
+  width: 42%;
+  transform: rotate(18deg) translateX(-280%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transition: transform 0.9s var(--ease-aero);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.shine:hover::before { transform: rotate(18deg) translateX(560%); }
+
+/* ---------- Gloss text ---------- */
+.gloss-text {
+  background-image: linear-gradient(180deg, #ffffff 0%, #eaf8ff 30%, #a8e2ff 48%, var(--accent) 62%, color-mix(in srgb, var(--accent) 60%, #001a33) 100%);
+  background-size: 100% 240%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gloss-text-sheen 7s var(--ease-aero) infinite;
+  filter: drop-shadow(0 2px 0 rgba(255, 255, 255, 0.3)) drop-shadow(0 8px 20px var(--shadow));
+}
+
+@keyframes gloss-text-sheen {
+  0%, 100% { background-position: 50% 0%; }
+  50% { background-position: 50% 100%; }
+}
+
+/* ---------- Reveal ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.7s var(--ease-aero), transform 0.7s var(--ease-aero);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal.is-visible { opacity: 1; transform: none; }
+
+/* ---------- Misc ---------- */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(28px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes bobble {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-5px) rotate(5deg); }
+}
+
+@keyframes shimmer {
+  to { background-position: -220% 0; }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-14px) scale(0.94); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes toast-out {
+  to { opacity: 0; transform: translateY(-10px) scale(0.96); }
+}
+
+.view { animation: rise 0.5s var(--ease-bounce); }
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .glass-strong {
+    background: rgba(250, 253, 255, 0.92);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* ---------- Chat: escribiendo… ---------- */
+.typing .msg-body { display: inline-flex; gap: 6px; padding: 14px 18px; }
+
+.typing .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, #fff, var(--accent));
+  animation: typing-bounce 1s ease-in-out infinite;
+}
+
+.typing .dot:nth-child(2) { animation-delay: 0.15s; }
+.typing .dot:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes typing-bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.55; }
+  50% { transform: translateY(-5px); opacity: 1; }
+}

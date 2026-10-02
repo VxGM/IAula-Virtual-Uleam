@@ -1,0 +1,41 @@
+:root {
+  --sky-1: #8fd8ff;
+  --sky-2: #4cc2ff;
+  --sky-3: #0b6fbd;
+  --accent: #0078d7;
+  --accent-deep: #01579b;
+  --grass: #7ab800;
+  --lime: #a5d610;
+  --aqua: #00c8c8;
+  --ink: #063a5e;
+  --ink-soft: rgba(6, 58, 94, 0.78);
+  --ink-faint: rgba(6, 58, 94, 0.55);
+  --success: #2e9e4f;
+  --warn: #d68910;
+  --danger: #c0392b;
+
+  --glass-bg: rgba(255, 255, 255, 0.42);
+  --glass-bg-strong: rgba(255, 255, 255, 0.58);
+  --glass-brd: rgba(255, 255, 255, 0.66);
+  --glass-hi: rgba(255, 255, 255, 0.78);
+  --shadow: rgba(3, 40, 70, 0.35);
+  --shadow-soft: 0 12px 32px var(--shadow);
+
+  --radius-xl: 26px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+
+  --font-sans: "Segoe UI", Frutiger, "Nunito Sans", system-ui, sans-serif;
+  --font-display: "Nunito", "Segoe UI", Frutiger, system-ui, sans-serif;
+
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-aero: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --par-x: 0px;
+  --par-y: 0px;
+  --mx: 50%;
+  --my: 30%;
+
+  color-scheme: light;
+}

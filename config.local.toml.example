@@ -1,0 +1,8 @@
+# Copiar a config.local.toml y completar. No se sube a git.
+
+[portal]
+username = ""
+password = ""
+
+[chat]
+api_key = ""
