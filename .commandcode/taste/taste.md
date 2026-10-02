@@ -6,3 +6,6 @@
 - Writes brief, sparse prompts (e.g. just "continua", or a one-line feature request) and expects the agent to plan first and then drive the implementation autonomously (including diagnosing and working around environment/tooling failures). Confidence: 0.7
 - Uses OpenAI's API (with their own key) to add LLM/chat features; expects secrets kept out of version control in a gitignored local config (`config.local.toml`) while shared/non-secret settings live in the committed `config.toml` (with a `.example` template for keys). Confidence: 0.45
 - Wants low-friction startup: prefers ready-made double-click launchers (e.g. a `Panel.bat`) and simple step-by-step "how to run" instructions documented in the README over recalling and typing commands. Confidence: 0.5
+- Publishes personal projects publicly to GitHub under the `VxGM` account and delegates the whole git flow (add remote, commit, push) to the agent instead of being handed commands to run. Confidence: 0.6
+- Expects published repos to be given a description and topic tags, matching the setup used across their other projects. Confidence: 0.4
+- Dislikes emojis in the agent's replies and wants plain text. Confidence: 0.45

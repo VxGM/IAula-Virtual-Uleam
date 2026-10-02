@@ -25,9 +25,17 @@ def course_dir(cfg: Config, course: Course) -> Path:
 
 def _filename(resp, material: Material) -> str:
     cd = resp.headers.get("content-disposition", "")
-    m = re.search(r"filename\*?=(?:UTF-8'')?\"?([^\";]+)", cd)
+    m = re.search(r"filename\*=UTF-8''([^;]+)", cd)
     if m:
         return safe(unquote(m.group(1)))
+    m = re.search(r'filename="?([^";]+)', cd)
+    if m:
+        raw = m.group(1)
+        try:
+            raw = raw.encode("latin-1").decode("utf-8")
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            pass
+        return safe(unquote(raw))
     path_name = unquote(Path(urlparse(resp.url).path).name)
     return safe(path_name) if "." in path_name else safe(material.title)
 

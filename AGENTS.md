@@ -10,6 +10,7 @@ Portal: Moodle ULEAM (login Microsoft/OIDC). Ejecutar siempre desde la raíz del
 | "qué materiales tiene X" | `materials --course X` |
 | "bájame los PDFs de X" | `download --course X` (→ `downloads/<curso>/`) |
 | "mándalo a NotebookLM" | `download --course X` y luego `nlm sync --course X` |
+| "un cuaderno por materia con todos los archivos" | `download --all` y luego `nlm sync --all --no-wait` |
 | "estado de NotebookLM" | `nlm status` |
 | "abre el panel / la interfaz gráfica" | `gui` (http://127.0.0.1:7800) |
 

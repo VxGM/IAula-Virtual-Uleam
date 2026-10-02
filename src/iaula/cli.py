@@ -37,14 +37,17 @@ def build_parser() -> argparse.ArgumentParser:
     m.add_argument("--course", required=True)
     m.add_argument("--json", action="store_true")
 
-    d = sub.add_parser("download", help="Descarga materiales de un curso")
-    d.add_argument("--course", required=True)
-    d.add_argument("--item", type=int, help="ID de módulo (omitir = todos)")
+    d = sub.add_parser("download", help="Descarga materiales (de un curso o de todos)")
+    d.add_argument("--course", help="Curso (id o parte del nombre)")
+    d.add_argument("--item", type=int, help="ID de módulo (solo con --course)")
+    d.add_argument("--all", action="store_true", help="Todos los cursos")
 
     n = sub.add_parser("nlm", help="NotebookLM")
     ns = n.add_subparsers(dest="nlm_cmd", required=True)
-    s = ns.add_parser("sync", help="Sube archivos descargados del curso a su notebook")
-    s.add_argument("--course", required=True)
+    s = ns.add_parser("sync", help="Crea/usa el notebook del curso y sube sus archivos")
+    s.add_argument("--course", help="Curso (id o parte del nombre)")
+    s.add_argument("--all", action="store_true", help="Todos los cursos (un notebook por materia)")
+    s.add_argument("--no-wait", action="store_true", help="No esperar el procesamiento de cada archivo")
     ns.add_parser("status", help="Auth NotebookLM + notebooks por curso")
 
     g = sub.add_parser("gui", help="Panel visual local (se abre en el navegador)")
@@ -71,12 +74,25 @@ def cmd_check(cfg, args) -> int:
 
 
 def cmd_download(cfg, args) -> int:
+    if args.all:
+        actions.run_download_all(cfg)
+        return 0
+    if not args.course:
+        print("Error: usa --course X o --all", file=sys.stderr)
+        return 1
     actions.run_download(cfg, args.course, item=args.item)
     return 0
 
 
 def cmd_nlm_sync(cfg, args) -> int:
-    actions.run_nlm_sync(cfg, args.course)
+    wait = not args.no_wait
+    if args.all:
+        actions.run_nlm_sync_all(cfg, wait=wait)
+        return 0
+    if not args.course:
+        print("Error: usa --course X o --all", file=sys.stderr)
+        return 1
+    actions.run_nlm_sync(cfg, args.course, wait=wait)
     return 0
 
 

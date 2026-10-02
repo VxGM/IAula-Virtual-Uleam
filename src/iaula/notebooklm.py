@@ -18,7 +18,8 @@ def _run(*args: str) -> dict | str:
         raise NotebookLMError("CLI `notebooklm` no instalado: pip install \"notebooklm-py[browser]\"")
     p = subprocess.run([exe, *args], capture_output=True, text=True, encoding="utf-8", timeout=900)
     if p.returncode != 0:
-        raise NotebookLMError((p.stderr or p.stdout).strip())
+        err = (p.stderr or p.stdout).strip()
+        raise NotebookLMError(err[-400:] if len(err) > 400 else err)
     out = p.stdout.strip()
     try:
         return json.loads(out)
