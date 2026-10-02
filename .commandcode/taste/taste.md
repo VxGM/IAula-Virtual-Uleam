@@ -11,3 +11,4 @@
 - Dislikes emojis in the agent's replies and wants plain text. Confidence: 0.45
 - Prefers one-shot bulk operations that cover everything at once (e.g. "one notebook per subject with all files", download/sync across all courses) over being walked through per-course manual steps. Confidence: 0.5
 - Re-prompts other agents with natural-language requests and expects the repo's agent-facing docs (AGENTS.md) to encode the exact commands so any agent can execute the workflow without rediscovery. Confidence: 0.45
+- Wants the agent to self-serve its own context — asking it to reach into a source (e.g. an assignment's description and attachments) and read/download the files itself, rather than being fed that content manually. Confidence: 0.5

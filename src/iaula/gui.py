@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import textwrap
 import threading
 import time
 import uuid
@@ -14,7 +15,9 @@ import requests
 from iaula import actions, notebooklm as nlm
 from iaula.config import Config
 from iaula.downloader import safe
+from iaula.extract import extract_text
 from iaula.portal.client import Portal
+from iaula.portal.tasks import list_tasks, task_context
 from iaula.state import State
 
 WEB_DIR = (Path(__file__).resolve().parent / "web").resolve()
@@ -78,6 +81,9 @@ def _downloaded_count(cfg: Config, short: str) -> int:
 _AUTH_CACHE: dict = {"at": 0.0, "ok": False}
 _AUTH_TTL = 300.0
 
+_TASK_CTX_CACHE: dict = {}
+_TASK_CTX_TTL = 900.0
+
 
 def nlm_auth_cached(force: bool = False) -> bool:
     now = time.time()
@@ -118,23 +124,68 @@ class Handler(BaseHTTPRequestHandler):
         except json.JSONDecodeError:
             return {}
 
+    def _task_ctx(self, task: dict, course: str) -> dict:
+        tid = task["id"]
+        entry = _TASK_CTX_CACHE.get(tid)
+        if entry and time.time() - entry["at"] < _TASK_CTX_TTL:
+            return entry
+        entry = {"at": time.time(), "intro": "", "files": [], "text": ""}
+        try:
+            portal = Portal(self.cfg).connect()
+            url = task.get("url") or ""
+            if not url:
+                for t in list_tasks(portal, days=180, past_days=180):
+                    if t.id == tid:
+                        url = t.url
+                        break
+            if url:
+                ctx = task_context(portal, url)
+                entry["intro"] = ctx.intro
+                entry["files"] = [{"name": f.name, "url": f.url} for f in ctx.files]
+            parts: list[str] = []
+            target = self.cfg.root / "downloads" / safe(course) / "Tareas" / safe(task["name"])
+            if target.exists():
+                for f in sorted(target.glob("*")):
+                    if sum(len(p) for p in parts) > 7000:
+                        break
+                    if f.suffix.lower() in {".pdf", ".txt", ".md", ".csv"}:
+                        try:
+                            parts.append(f"--- {f.name} ---\n" + extract_text(f, max_chars=4500))
+                        except Exception:
+                            pass
+            entry["text"] = "\n".join(parts)
+        except Exception:
+            pass
+        _TASK_CTX_CACHE[tid] = entry
+        return entry
+
     def _chat_system(self) -> str:
         state = State(self.cfg)
         now = time.time()
         courses = state.get_courses()
         names = {c["id"]: c["short"] for c in courses}
         course_txt = ", ".join(c["short"] for c in courses) or "sin datos"
-        tasks = [t for t in state.tasks_all() if t["due"] >= now - 86400][:20]
-        task_lines = "\n".join(
-            f"- {names.get(t['course_id'], '')}: {t['name']} "
-            f"(vence {time.strftime('%d/%m %H:%M', time.localtime(t['due']))})"
-            for t in tasks) or "(ninguna)"
+        blocks = []
+        for t in [t for t in state.tasks_all() if t["due"] >= now - 86400][:5]:
+            course = names.get(t["course_id"], "")
+            due = time.strftime("%d/%m %H:%M", time.localtime(t["due"]))
+            block = [f"- {t['name']} ({course}), vence {due}"]
+            ctx = self._task_ctx(t, course)
+            if ctx["intro"]:
+                block.append(f"  Descripción: {ctx['intro'][:1200]}")
+            if ctx["files"]:
+                block.append("  Adjuntos: " + ", ".join(f["name"] for f in ctx["files"]))
+            if ctx["text"]:
+                block.append("  Contenido de los archivos:\n" + textwrap.indent(ctx["text"][:7000], "    "))
+            blocks.append("\n".join(block))
+        task_lines = "\n".join(blocks) or "(ninguna)"
         rep = self._latest()
         new = rep.get("new_materials") or []
         new_lines = "\n".join(f"- {m['course']}: {m['title']}" for m in new[:15]) or "(nada nuevo)"
         return (
             "Eres el asistente de estudio del panel IAula (aula virtual de la ULEAM, Moodle). "
-            "Responde en español, claro y breve. Tienes datos reales del estudiante:\n"
+            "Responde en español, claro y breve. Tienes datos reales del estudiante, incluida la "
+            "descripción y el contenido de los archivos de sus tareas pendientes:\n"
             f"Fecha de hoy: {time.strftime('%A %d/%m/%Y', time.localtime(now))}\n"
             f"Cursos: {course_txt}\n"
             f"Tareas pendientes:\n{task_lines}\n"

@@ -2,11 +2,10 @@ import { get, post } from "../api.js";
 import { el, icon, toast } from "../ui.js";
 
 const STORAGE_KEY = "iaula-chat-v1";
-const SUGGESTIONS = [
+const BASE_SUGGESTIONS = [
   "¿Qué tareas tengo?",
   "¿Qué hay nuevo en mis cursos?",
   "Resume mi semana",
-  "¿Qué materiales descargué de Inteligencia de Negocios?",
 ];
 
 let history = load();
@@ -25,6 +24,7 @@ function mdLite(text) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
   return esc
+    .replace(/^#{1,4}\s+(.+)$/gm, "<strong>$1</strong>")
     .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
     .replace(/`([^`\n]+)`/g, "<code>$1</code>")
     .replace(/^\s*[-*]\s+/gm, "• ");
@@ -43,6 +43,14 @@ export async function render(root) {
   let info = { configured: false, model: "" };
   try { info = await get("/api/chat/info"); } catch { /* ignore */ }
 
+  let suggestions = BASE_SUGGESTIONS;
+  try {
+    const s = await get("/api/summary");
+    const dynamic = (s.upcoming_tasks || []).slice(0, 2)
+      .map((t) => `Explícame la tarea: ${t.name}`);
+    suggestions = [...BASE_SUGGESTIONS, ...dynamic].slice(0, 5);
+  } catch { /* ignore */ }
+
   const log = el("div", { class: "chat-log" });
   const typed = el("div", { class: "msg msg--bot typing" },
     el("div", { class: "msg-avatar", "aria-hidden": "true" }),
@@ -58,7 +66,7 @@ export async function render(root) {
     if (!history.length) {
       log.append(el("div", { class: "chat-empty" },
         el("p", null, "Pregúntame por tus cursos, tareas o materiales."),
-        el("div", { class: "chat-suggest" }, ...SUGGESTIONS.map((s) => {
+        el("div", { class: "chat-suggest" }, ...suggestions.map((s) => {
           const b = el("button", { class: "glossy-btn glossy-btn--sm glossy-btn--ghost" }, s);
           b.addEventListener("click", () => { input.value = s; send(); });
           return b;

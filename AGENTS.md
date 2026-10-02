@@ -18,7 +18,7 @@ Portal: Moodle ULEAM (login Microsoft/OIDC). Ejecutar siempre desde la raíz del
 Reglas:
 - Si falla por sesión vencida y el re-login automático no basta: `login` (abre navegador visible).
 - `nlm` usa la sesión de Google guardada; verificar con `nlm status`. Si caducó: probar `notebooklm auth refresh`; si sigue, cerrar Brave por completo y correr `.venv\Scripts\python scripts\refresh-google-session.py` (extrae la sesión del Brave), luego `nlm status`.
-- Asistente del panel: usa la API de OpenAI (key en `[chat] api_key` de `config.local.toml`; modelo en `[chat] model` de `config.toml`). El servidor inyecta cursos/tareas/materiales reales como contexto.
+- Asistente del panel: usa la API de OpenAI (key en `[chat] api_key` de `config.local.toml`; modelo en `[chat] model` de `config.toml`). El servidor inyecta cursos/tareas/materiales reales y, por cada tarea pendiente, su descripción y el contenido de sus adjuntos (cache ~15 min).
 - Primer `check` = línea base (no reporta novedades). Las siguientes sí.
 - Pedir confirmación antes de descargar/subir cursos completos sin que el usuario lo pida.
 - Nunca imprimir ni commitear credenciales (`config.local.toml`, `data/`).

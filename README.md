@@ -37,7 +37,8 @@ mientras usas el panel; ciérrala (o Ctrl+C) para apagarlo.
 
 Vistas: Resumen · Cursos · Tareas · NotebookLM · Asistente. Botones para revisar, descargar y
 sincronizar con ventana de progreso en vivo, y un chat de estudio (OpenAI: key en
-`[chat] api_key` de `config.local.toml`, modelo en `config.toml`).
+`[chat] api_key` de `config.local.toml`, modelo en `config.toml`) que conoce tus cursos,
+tareas, y la descripción y archivos de cada tarea pendiente.
 Tema Frutiger Aero (cielo, vidrio, burbujas).
 
 ## NotebookLM
