@@ -7,6 +7,7 @@ Portal: Moodle ULEAM (login Microsoft/OIDC). Ejecutar siempre desde la raíz del
 |---|---|
 | "revisa mis cursos / hay novedades?" | `check --json` |
 | "qué tareas tengo / cuándo entrego" | `tasks --days 30 --json` |
+| "archivos o contexto de la tarea X" | `task <id> --json` (descripción + adjuntos); `--download` los baja a `downloads/<curso>/Tareas/<tarea>/`; para leer un PDF usa `extract "<ruta>"` |
 | "qué materiales tiene X" | `materials --course X` |
 | "bájame los PDFs de X" | `download --course X` (→ `downloads/<curso>/`) |
 | "mándalo a NotebookLM" | `download --course X` y luego `nlm sync --course X` |

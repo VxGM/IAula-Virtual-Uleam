@@ -9,3 +9,5 @@
 - Publishes personal projects publicly to GitHub under the `VxGM` account and delegates the whole git flow (add remote, commit, push) to the agent instead of being handed commands to run. Confidence: 0.6
 - Expects published repos to be given a description and topic tags, matching the setup used across their other projects. Confidence: 0.4
 - Dislikes emojis in the agent's replies and wants plain text. Confidence: 0.45
+- Prefers one-shot bulk operations that cover everything at once (e.g. "one notebook per subject with all files", download/sync across all courses) over being walked through per-course manual steps. Confidence: 0.5
+- Re-prompts other agents with natural-language requests and expects the repo's agent-facing docs (AGENTS.md) to encode the exact commands so any agent can execute the workflow without rediscovery. Confidence: 0.45

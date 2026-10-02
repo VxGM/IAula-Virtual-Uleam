@@ -18,6 +18,8 @@ pip install -e ".[dev]"
 python -m iaula login                             # sesión del portal (Microsoft)
 python -m iaula check [--json]                    # novedades + tareas (--notify: toast)
 python -m iaula tasks --days 30 [--json]
+python -m iaula task 584517 --download           # descripción + archivos de una tarea
+python -m iaula extract "ruta.pdf"                # texto de un PDF/archivo (contexto)
 python -m iaula materials --course inteligencia
 python -m iaula download --course inteligencia    # → downloads/<curso>/
 python -m iaula nlm sync --course inteligencia    # sube los archivos al notebook del curso

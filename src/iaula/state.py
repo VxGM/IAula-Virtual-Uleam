@@ -55,12 +55,14 @@ class State:
         return new
 
     def record_tasks(self, items: list[Task]) -> list[Task]:
-        known = {r[0]: r[1] for r in self.db.execute("SELECT id, due FROM tasks")}
-        new = [t for t in items if t.id not in known or known[t.id] != t.due]
+        known = {r[0]: (r[1], r[2]) for r in self.db.execute("SELECT id, due, url FROM tasks")}
+        new = [t for t in items if known.get(t.id) != (t.due, t.url)]
         now = int(time.time())
         self.db.executemany(
-            "INSERT OR REPLACE INTO tasks (id, course_id, name, due, first_seen, url) VALUES (?,?,?,?,?,?)",
-            [(t.id, t.course_id, t.name, t.due, now, t.url) for t in new],
+            "INSERT INTO tasks (id, course_id, name, due, first_seen, url) VALUES (?,?,?,?,?,?) "
+            "ON CONFLICT(id) DO UPDATE SET course_id=excluded.course_id, name=excluded.name, "
+            "due=excluded.due, url=excluded.url",
+            [(t.id, t.course_id, t.name, t.due, now, t.url) for t in items],
         )
         self.db.commit()
         return new

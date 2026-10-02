@@ -28,6 +28,15 @@ def build_parser() -> argparse.ArgumentParser:
     t.add_argument("--days", type=int, default=30)
     t.add_argument("--json", action="store_true")
 
+    tk = sub.add_parser("task", help="Ver (y bajar) los archivos de una tarea")
+    tk.add_argument("id", help="ID (o parte de la URL) de la tarea, o su nombre")
+    tk.add_argument("--download", action="store_true", help="Descarga los archivos de la tarea")
+    tk.add_argument("--json", action="store_true")
+
+    e = sub.add_parser("extract", help="Extrae texto de un archivo (PDF, txt, md, csv) para dar contexto")
+    e.add_argument("path", help="Ruta del archivo")
+    e.add_argument("--max-chars", type=int, default=12000)
+
     c = sub.add_parser("check", help="Novedades de materiales + tareas")
     c.add_argument("--json", action="store_true")
     c.add_argument("--notify", action="store_true", help="Toast Windows")
@@ -73,6 +82,28 @@ def cmd_check(cfg, args) -> int:
     return 0
 
 
+def cmd_task(cfg, args) -> int:
+    if args.json:
+        res = actions.run_task(cfg, args.id, download=args.download, log=lambda _line: None)
+        print(_dump(res))
+    else:
+        actions.run_task(cfg, args.id, download=args.download)
+    return 0
+
+
+def cmd_extract(cfg, args) -> int:
+    from pathlib import Path
+
+    from iaula.extract import extract_text
+
+    path = Path(args.path)
+    if not path.exists():
+        print(f"Error: no existe {path}", file=sys.stderr)
+        return 1
+    print(extract_text(path, max_chars=args.max_chars))
+    return 0
+
+
 def cmd_download(cfg, args) -> int:
     if args.all:
         actions.run_download_all(cfg)
@@ -110,6 +141,10 @@ def run(cfg, args) -> int:
     elif args.cmd == "tasks":
         ts = _pending(Portal(cfg).connect(), args.days)
         print(_dump([t.__dict__ for t in ts]) if args.json else "\n".join(task_line(t) for t in ts) or "Sin tareas pendientes.")
+    elif args.cmd == "task":
+        return cmd_task(cfg, args)
+    elif args.cmd == "extract":
+        return cmd_extract(cfg, args)
     elif args.cmd == "check":
         return cmd_check(cfg, args)
     elif args.cmd == "materials":

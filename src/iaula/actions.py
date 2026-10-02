@@ -5,11 +5,11 @@ from typing import Callable
 
 from iaula import notebooklm as nlm
 from iaula.config import Config
-from iaula.downloader import course_dir, download, sha256
+from iaula.downloader import course_dir, download, download_url, safe, sha256
 from iaula.portal.client import Portal
 from iaula.portal.courses import find_course, list_courses
 from iaula.portal.materials import DOWNLOADABLE, list_materials
-from iaula.portal.tasks import list_tasks
+from iaula.portal.tasks import list_tasks, task_context
 from iaula.report import build_report, save_report
 from iaula.state import State
 
@@ -74,6 +74,62 @@ def run_download_all(cfg: Config, log: Log = print) -> dict:
         total += len([o for o in out if o["path"]])
     log(f"Descargados {total} archivos")
     return {"files": total}
+
+
+def run_task(cfg: Config, task_query: str, download: bool = False, log: Log = print) -> dict:
+    state = State(cfg)
+    tasks = state.tasks_all()
+    task = None
+    for t in tasks:
+        if str(t["id"]) == str(task_query) or str(task_query) in (t.get("url") or ""):
+            task = t
+            break
+    if task is None:
+        q = str(task_query).lower()
+        hits = [t for t in tasks if q in t["name"].lower()]
+        if len(hits) != 1:
+            names = "; ".join(f"{t['id']} {t['name']}" for t in tasks[:20])
+            raise LookupError(f"Tarea '{task_query}' → {len(hits)} coincidencias. Opciones: {names}")
+        task = hits[0]
+    names = {c["id"]: c["short"] for c in state.get_courses()}
+    course = names.get(task["course_id"], "")
+    portal = Portal(cfg).connect()
+    url = task.get("url") or ""
+    if not url:
+        try:
+            for t in list_tasks(portal, days=180, past_days=180):
+                if t.id == task["id"]:
+                    url = t.url
+                    break
+        except Exception:
+            pass
+    if not url:
+        raise LookupError(f"No pude resolver la URL de la tarea {task['id']} (corre `check`)")
+    if not task.get("url"):
+        state.db.execute("UPDATE tasks SET url=? WHERE id=?", (url, task["id"]))
+        state.db.commit()
+    ctx = task_context(portal, url)
+    log(f"Tarea: {task['name']} ({course})")
+    if ctx.intro:
+        log(f"Descripción: {ctx.intro[:600]}")
+    out = {
+        "id": task["id"], "course": course, "name": task["name"], "due": task["due"],
+        "url": url, "intro": ctx.intro,
+        "files": [{"name": f.name, "url": f.url} for f in ctx.files],
+        "downloaded": [],
+    }
+    if not ctx.files:
+        log("Sin archivos adjuntos en la tarea.")
+        return out
+    for f in ctx.files:
+        log(f"  - {f.name}")
+    if download:
+        target_dir = cfg.root / "downloads" / safe(course) / "Tareas" / safe(task["name"])
+        for f in ctx.files:
+            path = download_url(portal, target_dir, f.url, f.name)
+            out["downloaded"].append(str(path))
+            log(f"  OK -> {path}")
+    return out
 
 
 def _sync_course(cfg: Config, state: State, course, log: Log, wait: bool) -> dict:
