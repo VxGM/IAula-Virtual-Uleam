@@ -6,9 +6,6 @@
   <title>IAula Virtual</title>
   <meta name="theme-color" content="#0078d7" />
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles/tokens.css" />
   <link rel="stylesheet" href="styles/base.css" />
   <link rel="stylesheet" href="styles/components.css" />
@@ -75,13 +72,6 @@
         </svg>
         <span class="brand-word">IAula <span class="word-accent">Virtual</span></span>
       </a>
-      <nav class="nav" aria-label="Secciones">
-        <a class="nav-btn" href="#resumen" data-route="resumen">Resumen</a>
-        <a class="nav-btn" href="#cursos" data-route="cursos">Cursos</a>
-        <a class="nav-btn" href="#tareas" data-route="tareas">Tareas</a>
-        <a class="nav-btn" href="#notebooklm" data-route="notebooklm">NotebookLM</a>
-        <a class="nav-btn" href="#asistente" data-route="asistente">Asistente</a>
-      </nav>
       <div class="header-side">
         <span class="status status--onpanel" id="st-portal" title="Sesión del aula"><span class="status-dot"></span><span class="st-txt">aula…</span></span>
         <span class="status status--onpanel" id="st-nlm" title="Sesión NotebookLM"><span class="status-dot"></span><span class="st-txt">NLM…</span></span>
@@ -92,14 +82,76 @@
 
   <main class="container page" id="view" aria-live="polite"></main>
 
-  <footer class="footer glass">
-    <div class="footer-inner">
-      <p>IAula Virtual — burbujas para estudiar mejor.</p>
-      <p class="muted" id="foot-right"></p>
-    </div>
-  </footer>
-
   <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <div class="start-menu" id="start-menu" role="menu" aria-label="Menú de inicio">
+    <div class="sm-head">IAula Virtual</div>
+    <button class="sm-item" data-route="resumen" role="menuitem">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+      Resumen
+    </button>
+    <button class="sm-item" data-route="cursos" role="menuitem">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      Cursos
+    </button>
+    <button class="sm-item" data-route="tareas" role="menuitem">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      Tareas
+    </button>
+    <button class="sm-item" data-route="notebooklm" role="menuitem">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 1 2-2h12"/></svg>
+      NotebookLM
+    </button>
+    <button class="sm-item" data-route="asistente" role="menuitem">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9 9 0 0 1-3.8-.8L4 20l1.1-4.2A8.4 8.4 0 0 1 12.5 3a8.4 8.4 0 0 1 8.5 8.5z"/></svg>
+      Asistente
+    </button>
+    <div class="sm-sep"></div>
+    <button class="sm-item" id="sm-check" role="menuitem">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+      Revisar ahora
+    </button>
+    <a class="sm-item js-portal" href="https://aulavirtualmoodle.uleam.edu.ec/my/" target="_blank" rel="noopener" role="menuitem">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M20 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4"/></svg>
+      Abrir aula virtual
+    </a>
+  </div>
+
+  <nav class="taskbar" aria-label="Barra de tareas">
+    <button class="start-orb" id="start-orb" aria-label="Menú de inicio" title="Inicio">
+      <svg width="21" height="21" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M2.5 6.4 C5.6 4.1 8.7 4.0 11.3 5.5 L11.3 11.5 C8.7 10.0 5.6 10.1 2.5 12.3 Z" fill="#e5484d" />
+        <path d="M12.7 5.8 C15.3 7.3 18.4 7.2 21.5 5.0 L21.5 11.0 C18.4 13.2 15.3 13.3 12.7 11.8 Z" fill="#7fc242" />
+        <path d="M2.5 13.5 C5.6 11.3 8.7 11.4 11.3 12.9 L11.3 18.9 C8.7 17.4 5.6 17.5 2.5 19.7 Z" fill="#43a8e8" />
+        <path d="M12.7 13.2 C15.3 14.7 18.4 14.6 21.5 12.4 L21.5 18.4 C18.4 20.6 15.3 20.7 12.7 19.2 Z" fill="#f5bd3f" />
+      </svg>
+    </button>
+    <a class="task-btn" href="#resumen" data-route="resumen" title="Resumen">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+      <span class="task-label">Resumen</span>
+    </a>
+    <a class="task-btn" href="#cursos" data-route="cursos" title="Cursos">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span class="task-label">Cursos</span>
+    </a>
+    <a class="task-btn" href="#tareas" data-route="tareas" title="Tareas">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span class="task-label">Tareas</span>
+    </a>
+    <a class="task-btn" href="#notebooklm" data-route="notebooklm" title="NotebookLM">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 1 2-2h12"/></svg>
+      <span class="task-label">NotebookLM</span>
+    </a>
+    <a class="task-btn" href="#asistente" data-route="asistente" title="Asistente">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9 9 0 0 1-3.8-.8L4 20l1.1-4.2A8.4 8.4 0 0 1 12.5 3a8.4 8.4 0 0 1 8.5 8.5z"/></svg>
+      <span class="task-label">Asistente</span>
+    </a>
+    <div class="task-tray">
+      <span id="tray-info" class="tray-info"></span>
+      <span class="tray-clock" id="clock"></span>
+    </div>
+  </nav>
+
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

@@ -37,9 +37,9 @@ body::after {
 }
 
 :focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 3px;
-  border-radius: 8px;
+  outline: 2px solid #3c7fb1;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 h1, h2, h3, h4 { text-wrap: balance; font-weight: 700; }
@@ -62,10 +62,10 @@ button { font-family: inherit; cursor: pointer; }
 .page {
   position: relative;
   z-index: 2;
-  padding-bottom: 120px;
+  padding-bottom: 110px;
 }
 
-/* ---------- Header pill ---------- */
+/* ---------- Barra superior ---------- */
 .header {
   position: sticky;
   top: 12px;
@@ -96,78 +96,17 @@ button { font-family: inherit; cursor: pointer; }
 
 .brand-word {
   font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 1.28rem;
-  letter-spacing: 0.4px;
+  font-weight: 700;
+  font-size: 1.26rem;
+  letter-spacing: 0.3px;
 }
 
 .brand-word .word-accent { color: var(--lime); }
 
-.nav {
-  display: flex;
-  gap: 8px;
-  flex: 1;
-  justify-content: center;
-  min-width: 0;
-}
-
-.nav-btn {
-  padding: 8px 18px;
-  border-radius: var(--radius-pill);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
-  font-size: 0.88rem;
-  font-weight: 700;
-  text-decoration: none;
-  text-shadow: 0 1px 4px rgba(2, 70, 120, 0.75);
-  transition: background 0.25s var(--ease-smooth), box-shadow 0.25s var(--ease-smooth), transform 0.25s var(--ease-bounce);
-  white-space: nowrap;
-  backdrop-filter: blur(6px);
-}
-
-.nav-btn:hover {
-  background: rgba(255, 255, 255, 0.32);
-  transform: translateY(-1px);
-}
-
-.nav-btn.active {
-  background: rgba(255, 255, 255, 0.55);
-  color: var(--ink);
-  text-shadow: none;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.45), 0 6px 16px rgba(2, 136, 209, 0.4);
-}
-
-.header-side { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-
-/* ---------- Footer ---------- */
-.footer {
-  max-width: 1180px;
-  width: calc(100% - 24px);
-  margin: 10px auto 16px;
-  position: relative;
-  z-index: 2;
-}
-
-.footer-inner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 14px 24px;
-}
-
-.footer p { font-size: 0.82rem; }
+.header-side { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: auto; }
 
 /* ---------- Responsive ---------- */
-@media (max-width: 1024px) {
-  .header-inner { flex-wrap: wrap; }
-  .nav { order: 3; flex-basis: 100%; justify-content: flex-start; overflow-x: auto; padding-bottom: 4px; }
-}
-
 @media (max-width: 640px) {
   .brand-word { font-size: 1.05rem; }
   .header-side .glossy-btn { padding: 8px 16px; font-size: 0.8rem; }
-  .footer-inner { flex-direction: column; text-align: center; }
 }

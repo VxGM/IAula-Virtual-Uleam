@@ -48,6 +48,9 @@ Tokens en OKLCH donde aporta; hex base heredados de los proyectos del usuario.
 - **Aero window** (`.aero-window`): ventana Vista para el registro de trabajos en vivo (arrastrable, botón cerrar real, sin botones falsos).
 - **Toast** glass (éxito/alerta/error).
 - **Skeletons** con shimmer para cargas; estados vacíos que enseñan y ofrecen la acción.
+- **Shell Windows 7**: barra de tareas (Superbar) con orbe de inicio y menú funcional (vistas, revisar, abrir aula),
+  botones glass con glow azul, bandeja con última revisión y reloj; cada panel es una ventana Aero con botones
+  reales de minimizar/expandir; controles, campos y scrollbars estilo Win7; barra de progreso verde en trabajos.
 - **Chat (Asistente)**: burbujas glossy (usuario azul a la derecha, bot glass a la izquierda),
   indicador de escritura con puntos rebotando, chips de sugerencia y composer glass con textarea auto-creciente.
 
