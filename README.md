@@ -87,3 +87,25 @@ Publica el `.exe` en una **Release** de GitHub (los instaladores no van al repos
 
 > ⚠️ La clave de OpenAI incluida es **extraíble** del instalador público. Úsala con tope de gasto
 > en tu cuenta de OpenAI, o distribuye el instalador **sin clave** (el Asistente pedirá una propia).
+
+---
+
+## Por Docker (sin instalar nada)
+
+```powershell
+git clone https://github.com/VxGM/IAula-Virtual-Uleam.git
+cd IAula-Virtual-Uleam
+
+# Opcional: inyectar tu clave de OpenAI para que no pida configurar una
+copy NUL docker-openai.env
+notepad docker-openai.env   # OPENAI_API_KEY=sk-...
+
+docker compose -f packaging\docker\docker-compose.yml up -d
+# Abre http://localhost:7800
+```
+
+- Primera vez → asistente (usuario/clave ULEAM + OpenAI si no la inyectaste).
+- Datos persistentes en el volumen `iaula-data` (`docker compose down -v` los borra).
+- Requiere Docker Desktop / Engine. Ni Python ni Playwright.
+- NotebookLM: sesión de Google propia de cada uno (`notebooklm login` dentro del contenedor o en el host montado).
+
