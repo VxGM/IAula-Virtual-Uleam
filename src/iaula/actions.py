@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 import time
 from typing import Callable
 
@@ -132,6 +134,34 @@ def run_task(cfg: Config, task_query: str, download: bool = False, log: Log = pr
     return out
 
 
+def run_brave_refresh(cfg: Config, log: Log = print) -> dict:
+    log("Cerrando Brave (si está abierto)…")
+    subprocess.run(["taskkill", "/IM", "brave.exe", "/F"], capture_output=True)
+    for _ in range(15):
+        out = subprocess.run(["tasklist", "/FI", "IMAGENAME eq brave.exe"],
+                             capture_output=True, text=True)
+        if "brave.exe" not in out.stdout:
+            break
+        time.sleep(1)
+    else:
+        raise RuntimeError("Brave no se cerró; ciérralo a mano e intenta otra vez")
+    log("Brave cerrado. Extrayendo la sesión de Google…")
+    script = cfg.root / "scripts" / "refresh-google-session.py"
+    p = subprocess.run([sys.executable, str(script)], capture_output=True, text=True,
+                       encoding="utf-8", errors="replace", timeout=600)
+    for line in (p.stdout or "").strip().splitlines():
+        log(line)
+    if p.returncode != 0:
+        tail = (p.stderr or "").strip().splitlines()[-3:]
+        raise RuntimeError(f"El script falló ({p.returncode}): " + " / ".join(tail))
+    log("Verificando con NotebookLM…")
+    ok = nlm.auth_ok()
+    log("Sesión: " + ("OK" if ok else "sigue sin responder"))
+    if not ok:
+        raise RuntimeError("El refresco terminó pero la verificación falló")
+    return {"ok": True}
+
+
 def _sync_course(cfg: Config, state: State, course, log: Log, wait: bool) -> dict:
     folder = course_dir(cfg, course)
     files = ([f for f in sorted(folder.glob("*")) if f.suffix.lower() in nlm.UPLOADABLE]
@@ -187,7 +217,8 @@ def _sync_course(cfg: Config, state: State, course, log: Log, wait: bool) -> dic
 def run_nlm_sync(cfg: Config, course_query: str, log: Log = print, wait: bool = True) -> dict:
     if not nlm.auth_ok():
         raise nlm.NotebookLMError(
-            "NotebookLM sin sesión: cierra Brave y corre scripts\\refresh-google-session.py")
+            "NotebookLM sin sesión: usa el botón Renovar sesión en el panel o corre "
+            "scripts\\refresh-google-session.py")
     course = find_course(list_courses(Portal(cfg).connect()), str(course_query))
     state = State(cfg)
     res = _sync_course(cfg, state, course, log, wait)
@@ -199,7 +230,8 @@ def run_nlm_sync(cfg: Config, course_query: str, log: Log = print, wait: bool = 
 def run_nlm_sync_all(cfg: Config, log: Log = print, wait: bool = True) -> list[dict]:
     if not nlm.auth_ok():
         raise nlm.NotebookLMError(
-            "NotebookLM sin sesión: cierra Brave y corre scripts\\refresh-google-session.py")
+            "NotebookLM sin sesión: usa el botón Renovar sesión en el panel o corre "
+            "scripts\\refresh-google-session.py")
     portal = Portal(cfg).connect()
     state = State(cfg)
     out = []

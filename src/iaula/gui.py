@@ -379,6 +379,10 @@ class Handler(BaseHTTPRequestHandler):
             jid = self.jobs.start(
                 "Revisando cursos",
                 lambda log: actions.run_check(cfg, days=int(payload.get("days", 30)), log=log))
+        elif kind == "refresh_session":
+            jid = self.jobs.start(
+                "Renovando sesión de Google",
+                lambda log: actions.run_brave_refresh(cfg, log=log))
         elif kind in {"download", "nlm_sync"}:
             cid = payload.get("course_id")
             if cid is None:

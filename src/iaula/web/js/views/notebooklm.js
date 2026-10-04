@@ -4,6 +4,12 @@ import { runAction } from "../actions.js";
 
 const REFRESH_CMD = "python scripts\\refresh-google-session.py";
 
+function renewSession() {
+  const ok = confirm("Se cerrará Brave por completo para renovar la sesión de Google.\n¿Continuar?");
+  if (!ok) return;
+  runAction("refresh_session", {}, "Renovando sesión de Google");
+}
+
 function statusShell() {
   const body = el("div", null, skeleton(1, 34));
   const panel = el("section", { class: "panel glass reveal" },
@@ -26,13 +32,26 @@ async function fillStatus(body) {
     el("span", { class: "status-dot" }),
     el("span", null, ok ? "Sesión activa: el CLI de NotebookLM responde." : "Sin sesión de Google."),
   ));
+
+  const actions = el("div", { style: "display:flex;gap:8px;flex-wrap:wrap;margin-top:12px" });
+
   if (!ok) {
-    body.append(el("p", { class: "small muted", style: "margin:10px 0 6px" }, "Cierra Brave por completo y corre:"));
-    body.append(el("div", { class: "cmd" }, REFRESH_CMD));
-    const b = el("button", { class: "glossy-btn glossy-btn--sm", style: "margin-top:12px" }, icon("refresh"), "Comprobar de nuevo");
-    b.addEventListener("click", () => fillStatus(body));
-    body.append(b);
+    body.append(el("p", { class: "small muted", style: "margin:10px 0 0" },
+      "Renueva con un clic (cierra Brave por ti) o a mano:"));
+    body.append(el("div", { class: "cmd", style: "margin-top:8px" }, REFRESH_CMD));
+    const renew = el("button", { class: "glossy-btn glossy-btn--sm" }, icon("refresh"), "Renovar sesión (cierra Brave)");
+    renew.addEventListener("click", renewSession);
+    const check = el("button", { class: "glossy-btn glossy-btn--sm glossy-btn--ghost" }, icon("check"), "Comprobar de nuevo");
+    check.addEventListener("click", () => fillStatus(body));
+    actions.append(renew, check);
+  } else {
+    const renew = el("button", { class: "glossy-btn glossy-btn--sm glossy-btn--ghost", title: "Cierra Brave y vuelve a extraer la sesión de Google" }, icon("refresh"), "Renovar sesión");
+    renew.addEventListener("click", renewSession);
+    const check = el("button", { class: "glossy-btn glossy-btn--sm glossy-btn--ghost" }, icon("check"), "Comprobar de nuevo");
+    check.addEventListener("click", () => fillStatus(body));
+    actions.append(renew, check);
   }
+  body.append(actions);
 }
 
 function coursesPanel(data) {
