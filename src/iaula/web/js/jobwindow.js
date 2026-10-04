@@ -16,6 +16,7 @@ function build() {
   document.body.append(win);
 
   bar.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".job-close")) return;
     const sx = e.clientX, sy = e.clientY;
     let base = [0, 0];
     try { base = JSON.parse(win.dataset.pos || "[0,0]"); } catch { /* keep */ }
