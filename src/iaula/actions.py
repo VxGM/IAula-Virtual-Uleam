@@ -171,6 +171,24 @@ def run_login(cfg: Config, headless: bool = False, log: Log = print) -> dict:
     return {"courses": len(courses)}
 
 
+def run_login_with_browser(cfg: Config, browser_key: str = "", headless: bool = False, log: Log = print) -> dict:
+    ensure_chromium(log)
+    from iaula.browsers import detect_browsers
+    browsers = {b.key: b for b in detect_browsers()}
+    b = browsers.get(browser_key) if browser_key else None
+    if b is None:
+        b = browsers.get("brave") or browsers.get("chrome") or default_browser()
+        if b is None:
+            raise RuntimeError("No se detectó navegador compatible")
+    log(f"Usando navegador: {b.name} ({b.path})")
+    login(cfg, headless=headless, browser=b.path)
+    log("Sesión guardada. Comprobando el aula…")
+    courses = list_courses(Portal(cfg).connect())
+    log(f"Conectado: {len(courses)} cursos en curso")
+    cfg.notebooklm_browser = browser_key
+    return {"courses": len(courses), "browser": browser_key}
+
+
 def run_brave_refresh(cfg: Config, log: Log = print) -> dict:
     script = None
     for cand in (cfg.root / "scripts" / "refresh-google-session.py",

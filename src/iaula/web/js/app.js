@@ -105,8 +105,9 @@ async function boot() {
   try { status = await get("/api/setup/status"); } catch { /* servidor viejo */ }
   if (status.needs_setup) {
     document.body.classList.add("setup-mode");
-    const { renderSetup } = await import("./setup.js");
+    const { renderSetup, pickBrowser } = await import("./setup.js");
     renderSetup(document.getElementById("view"));
+    setTimeout(() => pickBrowser(document.getElementById("view")), 600);
     return;
   }
   document.body.classList.remove("setup-mode");

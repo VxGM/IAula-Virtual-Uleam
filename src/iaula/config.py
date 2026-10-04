@@ -28,6 +28,7 @@ class Config:
     root: Path
     portal: PortalConfig = field(default_factory=PortalConfig)
     chat: ChatConfig = field(default_factory=ChatConfig)
+    notebooklm_browser: str = ""  # key del navegador elegido para NotebookLM
 
 
 def app_dir() -> Path:

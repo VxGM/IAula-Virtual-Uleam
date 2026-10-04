@@ -1,4 +1,4 @@
-import { post } from "./api.js";
+import { post, get } from "./api.js";
 import { el, icon, toast } from "./ui.js";
 import { runAction, setOnJobDone } from "./actions.js";
 
@@ -52,3 +52,40 @@ export function renderSetup(root) {
     )));
   setTimeout(() => user.focus(), 120);
 }
+
+export async function pickBrowser(root) {
+  let info;
+  try { info = await get("/api/notebooklm/browsers"); } catch { return; }
+  const { browsers, default: defKey } = info;
+  if (!browsers.length) return;
+  const wrap = el("div", { class: "panel glass reveal is-visible setup-card" });
+  root.append(wrap);
+  wrap.append(el("div", { class: "panel-head" }, el("h2", null, "Elegí tu navegador"), icon("globe", 18)),
+    el("div", { class: "panel-body" },
+      el("p", { class: "small muted", style: "margin-bottom:14px" },
+        "NotebookLM necesita un navegador con sesión de Google. Detecté:"),
+      ...browsers.map(b => {
+        const label = el("label", { class: "setup-label", style: "display:flex;align-items:center;gap:8px;cursor:pointer" });
+        const radio = el("input", { type: "radio", name: "browser", value: b.key });
+        if (b.key === defKey) { radio.checked = true; label.append(radio, `${b.name}  `, el("span", { class: "small muted" }, "(recomendado)")); }
+        else { label.append(radio, b.name); }
+        return label;
+      }),
+      el("div", { style: "margin-top:18px;display:flex;align-items:center;gap:10px" },
+        el("button", { class: "glossy-btn glossy-btn--lg" }, icon("check"), "Guardar"))));
+  const form = wrap.querySelector("button");
+  form.addEventListener("click", async () => {
+    const sel = wrap.querySelector('input[name="browser"]:checked');
+    const browser = sel ? sel.value : browsers[0].key;
+    form.classList.add("is-busy");
+    try {
+      await post("/api/setup/browser", { browser });
+      toast("Navegador guardado", "ok");
+      wrap.remove();
+    } catch (e) {
+      toast(e.message, "err");
+      form.classList.remove("is-busy");
+    }
+  });
+}
+

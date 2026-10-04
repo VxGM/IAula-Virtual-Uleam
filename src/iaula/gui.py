@@ -148,6 +148,29 @@ class Handler(BaseHTTPRequestHandler):
         type(self).cfg = load_config()
         self._json({"ok": True})
 
+    def _setup_browser(self, payload: dict) -> None:
+        browser = str(payload.get("browser") or "").strip()
+        if not browser:
+            self._error("falta browser", 400)
+            return
+        local = self.cfg.root / "config.local.toml"
+        data = {}
+        if local.exists():
+            try:
+                data = tomllib.loads(local.read_text(encoding="utf-8"))
+            except Exception:
+                data = {}
+        data.setdefault("notebooklm", {})["browser"] = browser
+        local.write_text(
+            "\n".join(
+                f"[{k}]\n" + "\n".join(f"{kk} = {json.dumps(vv)}" for kk, vv in v.items()) + "\n"
+                for k, v in data.items()
+            ),
+            encoding="utf-8",
+        )
+        type(self).cfg = load_config()
+        self._json({"ok": True})
+
     def _task_ctx(self, task: dict, course: str) -> dict:
         tid = task["id"]
         entry = _TASK_CTX_CACHE.get(tid)
@@ -376,7 +399,16 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"courses": courses, "uploaded": uploaded})
 
         elif path == "/api/notebooklm/auth":
-            self._json({"ok": nlm_auth_cached(force="force=1" in self.path)})
+            self._json({"ok": nlm_auth_cached(force="force=1" in self.path),
+                        "browser": None})
+
+        elif path == "/api/notebooklm/browsers":
+            from iaula.browsers import detect_browsers, default_browser
+            browsers = [{"key": b.key, "name": b.name, "path": str(b.path)}
+                        for b in detect_browsers()]
+            d = default_browser()
+            self._json({"browsers": browsers,
+                        "default": d.key if d else None})
 
         elif path == "/api/chat/info":
             self._json({"configured": bool(cfg.chat.api_key), "model": cfg.chat.model})
@@ -392,6 +424,9 @@ class Handler(BaseHTTPRequestHandler):
                 needs = True
             self._json({"needs_setup": needs,
                         "mode": "app" if getattr(sys, "frozen", False) else "dev"})
+
+        elif path == "/api/setup/browser":
+            self._setup_browser(payload or {})
 
         elif path == "/api/sessions":
             try:
@@ -421,6 +456,11 @@ class Handler(BaseHTTPRequestHandler):
             jid = self.jobs.start(
                 "Conectando con el aula (Microsoft)",
                 lambda log: actions.run_login(cfg, log=log))
+        elif kind == "login_browser":
+            jid = self.jobs.start(
+                "Conectando con el aula",
+                lambda log: actions.run_login_with_browser(
+                    cfg, browser_key=payload.get("browser", ""), log=log))
         elif kind == "refresh_session":
             jid = self.jobs.start(
                 "Renovando sesión de Google",
