@@ -67,6 +67,7 @@ var
   DepPage: TWizardPage;
   DepStatus: TNewStaticText;
   DepBar: TNewProgressBar;
+  WebView2DownloadPage: TDownloadWizardPage;
 
 procedure SetStatus(const Text: String);
 begin
@@ -108,7 +109,6 @@ end;
 
 function InstallWebView2: Boolean;
 var
-  Dl: TDownloadURL;
   SetupPath: String;
   Res: Integer;
 begin
@@ -116,19 +116,20 @@ begin
   SetupPath := ExpandConstant('{tmp}\EdgeWebView2Setup.exe');
   SetStatus('WebView2 Runtime no detectado. Descargando…');
   SetProgress(20);
-  Dl := TDownloadURL.Create;
+  WebView2DownloadPage.Clear;
+  WebView2DownloadPage.Add(WebView2URL, 'EdgeWebView2Setup.exe', '');
+  WebView2DownloadPage.Show;
   try
-    Dl.URL := WebView2URL;
-    Dl.FileName := SetupPath;
     try
-      Dl.Execute;
+      WebView2DownloadPage.Download;
     except
+      WebView2DownloadPage.Hide;
       SetProgress(0);
       MsgBox('No se pudo descargar WebView2 Runtime. Revisa tu conexión a Internet.', mbError, MB_OK);
       Exit;
     end;
   finally
-    Dl.Free;
+    WebView2DownloadPage.Hide;
   end;
   SetStatus('Instalando WebView2 Runtime…');
   SetProgress(60);
@@ -161,7 +162,7 @@ begin
   ChromiumPath := ChromiumExePath();
   if ChromiumPath <> '' then
     SetStatus(DepStatus.Caption + #13#10 + 'Navegador interno: instalado')
-  else if IsTaskSelected('chromium') then
+  else if WizardIsTaskSelected('chromium') then
     SetStatus(DepStatus.Caption + #13#10 + 'Navegador interno: se descargará al finalizar')
   else
     SetStatus(DepStatus.Caption + #13#10 + 'Navegador interno: se descargará en el primer inicio');
@@ -186,7 +187,7 @@ begin
       SetStatus('WebView2 Runtime: no detectado (se instalará al pulsar Siguiente)');
     if ChromiumExePath() <> '' then
       SetStatus(DepStatus.Caption + #13#10 + 'Navegador interno: instalado')
-    else if IsTaskSelected('chromium') then
+    else if WizardIsTaskSelected('chromium') then
       SetStatus(DepStatus.Caption + #13#10 + 'Navegador interno: se descargará al finalizar')
     else
       SetStatus(DepStatus.Caption + #13#10 + 'Navegador interno: se descargará en el primer inicio');
@@ -208,4 +209,6 @@ begin
   DepBar.Width := DepPage.SurfaceWidth;
   DepBar.Height := 18;
   DepBar.Position := 0;
+  WebView2DownloadPage := CreateDownloadPage('Descargando WebView2 Runtime',
+    'Conectando con Microsoft…', nil);
 end;
