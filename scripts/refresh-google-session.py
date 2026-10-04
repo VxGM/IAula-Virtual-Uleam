@@ -1,7 +1,15 @@
-import json, subprocess, sys, time, urllib.request
+import json, os, subprocess, sys, time, urllib.request
 from pathlib import Path
 
-import websocket
+try:
+    import websocket
+except ImportError:
+    venv_python = Path(__file__).resolve().parents[1] / ".venv" / "Scripts" / "python.exe"
+    if venv_python.exists() and Path(sys.executable).resolve() != venv_python.resolve():
+        raise SystemExit(subprocess.run(
+            [str(venv_python), str(Path(__file__).resolve()), *sys.argv[1:]]).returncode)
+    print("Falta 'websocket-client'. Usa: .venv\\Scripts\\python scripts\\refresh-google-session.py")
+    sys.exit(2)
 
 UD = r"C:\Users\ASUS\AppData\Local\BraveSoftware\Brave-Browser\User Data"
 BRAVE = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
