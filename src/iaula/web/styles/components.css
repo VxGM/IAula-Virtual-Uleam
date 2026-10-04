@@ -950,3 +950,21 @@
 }
 
 .job-window { bottom: 58px; }
+
+/* ---------- Asistente de bienvenida ---------- */
+body.setup-mode .taskbar,
+body.setup-mode .start-menu { display: none; }
+
+.setup-card { max-width: 540px; margin: 7vh auto 40px; }
+
+.setup-card .panel-body { padding: 22px 24px 26px; }
+
+.setup-label {
+  display: block;
+  margin: 14px 0 5px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.setup-card .chat-input { width: 100%; }

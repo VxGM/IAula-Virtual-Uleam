@@ -14,6 +14,7 @@ Portal: Moodle ULEAM (login Microsoft/OIDC). Ejecutar siempre desde la raíz del
 | "un cuaderno por materia con todos los archivos" | `download --all` y luego `nlm sync --all --no-wait` |
 | "estado de NotebookLM" | `nlm status` |
 | "abre el panel / la interfaz gráfica" | `gui` (http://127.0.0.1:7800) |
+| "abre la app de escritorio" | `app` (ventana propia) |
 
 Reglas:
 - Si falla por sesión vencida y el re-login automático no basta: `login` (abre navegador visible).

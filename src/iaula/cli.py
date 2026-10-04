@@ -62,6 +62,9 @@ def build_parser() -> argparse.ArgumentParser:
     g = sub.add_parser("gui", help="Panel visual local (se abre en el navegador)")
     g.add_argument("--port", type=int, default=7800)
     g.add_argument("--no-open", action="store_true", help="No abrir el navegador automáticamente")
+
+    a = sub.add_parser("app", help="App de escritorio (ventana propia)")
+    a.add_argument("--port", type=int, default=7800)
     return p
 
 
@@ -132,6 +135,11 @@ def cmd_gui(cfg, args) -> int:
     return gui.serve(cfg, port=args.port, open_browser=not args.no_open)
 
 
+def cmd_app(cfg, args) -> int:
+    from iaula import desktop
+    return desktop.run(cfg, port=args.port)
+
+
 def run(cfg, args) -> int:
     if args.cmd == "login":
         print(login(cfg, headless=args.headless))
@@ -161,6 +169,8 @@ def run(cfg, args) -> int:
             print(f"  curso {cid} -> {nb}")
     elif args.cmd == "gui":
         return cmd_gui(cfg, args)
+    elif args.cmd == "app":
+        return cmd_app(cfg, args)
     return 0
 
 

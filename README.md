@@ -1,66 +1,89 @@
 # IAula Virtual
 
-Monitor del aula virtual: novedades de materiales y tareas próximas; descarga de documentos y subida a NotebookLM bajo demanda.
+Monitor del aula virtual de la **ULEAM** (Moodle) con panel visual estilo **Windows 7 / Frutiger Aero**.
+Detecta materiales nuevos, tareas próximas, descarga documentos y los sincroniza con NotebookLM.
+Trae un **Asistente** que conoce tus cursos, tus tareas y el contenido de sus archivos.
 
-Funcional: login (Microsoft/OIDC), cursos, materiales, tareas, novedades, descargas, NotebookLM y chequeo diario con aviso.
+Licencia **MIT**. Hecho por y para estudiantes.
 
-## Instalación
+---
+
+## Para estudiantes (no necesitas saber nada de tecnología)
+
+1. Descarga **`IAulaVirtual-Setup-1.0.0.exe`** desde la pestaña **Releases** de este repositorio.
+2. Doble clic → *Siguiente, siguiente, instalar* → se abre solo.
+3. Primera pantalla: escribe tu **usuario y contraseña de la ULEAM**. Se guardan **solo en tu PC**.
+4. Se abrirá una ventana de Microsoft: inicia sesión **una vez**. Ya está.
+
+**Qué puedes hacer:**
+- **Resumen** — novedades y próximas entregas de un vistazo.
+- **Cursos** — materiales de cada materia, descargarlos, abrir el aula.
+- **Tareas** — línea de tiempo con vencimientos y cuenta regresiva.
+- **Asistente** — pregúntale por tus cursos, tareas o el enunciado de un taller
+  (la clave de IA viene incluida; no tienes que configurar nada).
+- **NotebookLM** *(opcional, avanzado)* — sube los archivos de cada materia a **tus propios**
+  cuadernos de NotebookLM.
+
+**Desinstalar:** Configuración → Aplicaciones → IAula Virtual.
+El desinstalador es **profundo**: borra tus datos locales, descargas y el navegador interno.
+
+> ¿Algo no funciona? En la vista NotebookLM está el botón **Renovar sesión**, y el botón
+> **Revisar ahora** comprueba todo de nuevo.
+
+---
+
+## Para desarrolladores
+
+Requiere **Python 3.11+** en Windows.
 
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
 pip install -e ".[dev]"
+playwright install chromium
+python -m iaula login      # sesión del aula (una vez)
+python -m iaula app        # app de escritorio (ventana propia)
+python -m iaula gui        # o el panel en el navegador
 ```
 
-## Comandos
+### Comandos
 
 ```bash
 python -m iaula login                             # sesión del portal (Microsoft)
-python -m iaula check [--json]                    # novedades + tareas (--notify: toast)
-python -m iaula tasks --days 30 [--json]
-python -m iaula task 584517 --download           # descripción + archivos de una tarea
+python -m iaula check [--json] [--notify]         # novedades + tareas
+python -m iaula tasks --days 30 [--json]          # próximas entregas
+python -m iaula task 584517 [--download] [--json] # descripción + archivos de una tarea
 python -m iaula extract "ruta.pdf"                # texto de un PDF/archivo (contexto)
 python -m iaula materials --course inteligencia
-python -m iaula download --course inteligencia    # → downloads/<curso>/
-python -m iaula nlm sync --course inteligencia    # sube los archivos al notebook del curso
+python -m iaula download --course X | --all
+python -m iaula nlm sync --course X | --all [--no-wait]
 python -m iaula nlm status
+python -m iaula app                               # app de escritorio
+python -m iaula gui                               # panel en el navegador
 ```
 
-## Panel visual
+- **Datos en desarrollo:** `config.toml` + `config.local.toml` (credenciales, gitignored) y `data/`, `downloads/`.
+- **Datos instalado:** `%LOCALAPPDATA%\IAulaVirtual`.
+- **NotebookLM:** el CLI `notebooklm` con tu sesión de Google. Si caduca: botón *Renovar sesión*
+  en el panel, o `notebooklm auth refresh` → `python scripts\refresh-google-session.py`.
 
-```bash
-python -m iaula gui            # abre el panel en el navegador (http://127.0.0.1:7800)
-```
+### Compilar el instalador
 
-O doble clic en `Panel.bat` (misma cosa, sin escribir comandos). Deja la ventana abierta
-mientras usas el panel; ciérrala (o Ctrl+C) para apagarlo.
-
-Vistas: Resumen · Cursos · Tareas · NotebookLM · Asistente. Botones para revisar, descargar y
-sincronizar con ventana de progreso en vivo, y un chat de estudio (OpenAI: key en
-`[chat] api_key` de `config.local.toml`, modelo en `config.toml`) que conoce tus cursos,
-tareas, y la descripción y archivos de cada tarea pendiente.
-Tema Frutiger Aero (cielo, vidrio, burbujas).
-
-## NotebookLM
-
-Usa el CLI `notebooklm` con la sesión de Google guardada en `~/.notebooklm`. Si la sesión caduca:
-
-```bash
-notebooklm auth refresh                  # 1) reintento ligero (rotación de tokens)
-# si sigue vencida:
-# 2) cerrar Brave por completo
-python scripts\refresh-google-session.py
-# 3) verificar
-python -m iaula nlm status
-```
-
-## Aviso diario
+Requiere **Inno Setup 6** (`winget install JRSoftware.InnoSetup`).
 
 ```powershell
-scripts\install-daily-task.ps1 -Time 07:30   # registra la tarea IAula-Check (check + toast)
+# 1) (Opcional) tu clave de OpenAI para incluirla en el instalador — NO se sube a git
+mkdir .build
+"sk-tu-key" | Set-Content .build\author_key.txt
+
+# 2) Icono + build + instalador
+python packaging\make_icon.py
+powershell -ExecutionPolicy Bypass -File packaging\build.ps1 -Version 1.0.0
+
+# Resultado: packaging\Output\IAulaVirtual-Setup-1.0.0.exe
 ```
 
-## Configuración
+Publica el `.exe` en una **Release** de GitHub (los instaladores no van al repositorio).
 
-- `config.toml` — valores no secretos.
-- `config.local.toml` — credenciales del portal (copiar de `config.local.toml.example`). Gitignored.
+> ⚠️ La clave de OpenAI incluida es **extraíble** del instalador público. Úsala con tope de gasto
+> en tu cuenta de OpenAI, o distribuye el instalador **sin clave** (el Asistente pedirá una propia).

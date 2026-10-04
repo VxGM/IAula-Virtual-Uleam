@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import os
+import sys
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
+DEFAULT_PORTAL_URL = "https://aulavirtualmoodle.uleam.edu.ec"
+
 
 @dataclass
 class PortalConfig:
-    base_url: str = ""
+    base_url: str = DEFAULT_PORTAL_URL
     username: str = ""
     password: str = ""
 
@@ -27,7 +30,19 @@ class Config:
     chat: ChatConfig = field(default_factory=ChatConfig)
 
 
+def app_dir() -> Path:
+    base = os.environ.get("LOCALAPPDATA") or str(Path.home())
+    return Path(base) / "IAulaVirtual"
+
+
 def find_root(start: Path | None = None) -> Path:
+    env = os.environ.get("IAULA_HOME")
+    if env:
+        return Path(env).expanduser().resolve()
+    if getattr(sys, "frozen", False):
+        root = app_dir()
+        root.mkdir(parents=True, exist_ok=True)
+        return root
     current = (start or Path.cwd()).resolve()
     for candidate in (current, *current.parents):
         if (candidate / "config.toml").exists():
@@ -42,6 +57,19 @@ def _load_toml(path: Path) -> dict:
         return tomllib.load(fh)
 
 
+def bundled_key() -> str:
+    for candidate in (Path(sys.executable).parent / "bundled_key.txt",
+                      Path(__file__).resolve().parent / "bundled_key.txt"):
+        try:
+            if candidate.exists():
+                text = candidate.read_text(encoding="utf-8").strip()
+                if text:
+                    return text
+        except OSError:
+            pass
+    return ""
+
+
 def load_config(start: Path | None = None) -> Config:
     root = find_root(start)
     data = _load_toml(root / "config.toml")
@@ -50,5 +78,5 @@ def load_config(start: Path | None = None) -> Config:
     portal["username"] = os.environ.get("IAULA_USERNAME", portal.get("username", ""))
     portal["password"] = os.environ.get("IAULA_PASSWORD", portal.get("password", ""))
     chat = {**data.get("chat", {}), **local.get("chat", {})}
-    chat["api_key"] = os.environ.get("OPENAI_API_KEY", chat.get("api_key", ""))
+    chat["api_key"] = chat.get("api_key") or bundled_key() or os.environ.get("OPENAI_API_KEY", "")
     return Config(root=root, portal=PortalConfig(**portal), chat=ChatConfig(**chat))

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import sys
 import textwrap
 import threading
 import time
+import tomllib
 import uuid
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -13,7 +15,7 @@ from urllib.parse import urlparse
 import requests
 
 from iaula import actions, notebooklm as nlm
-from iaula.config import Config
+from iaula.config import Config, load_config
 from iaula.downloader import safe
 from iaula.extract import extract_text
 from iaula.portal.client import Portal
@@ -123,6 +125,28 @@ class Handler(BaseHTTPRequestHandler):
             return json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             return {}
+
+    def _setup(self, payload: dict) -> None:
+        username = str(payload.get("username") or "").strip()
+        password = str(payload.get("password") or "")
+        if not username or not password:
+            self._error("Usuario y contraseña son obligatorios", 400)
+            return
+        openai_key = str(payload.get("openai_key") or "").strip()
+        root = self.cfg.root
+        lines = [
+            "[portal]",
+            f"username = {json.dumps(username, ensure_ascii=False)}",
+            f"password = {json.dumps(password, ensure_ascii=False)}",
+            "",
+            "[chat]",
+            f"api_key = {json.dumps(openai_key)}",
+            "",
+        ]
+        root.mkdir(parents=True, exist_ok=True)
+        (root / "config.local.toml").write_text("\n".join(lines), encoding="utf-8")
+        type(self).cfg = load_config()
+        self._json({"ok": True})
 
     def _task_ctx(self, task: dict, course: str) -> dict:
         tid = task["id"]
@@ -247,6 +271,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._action(path.removeprefix("/api/actions/"), payload or {})
             elif path == "/api/chat":
                 self._chat(payload or {})
+            elif path == "/api/setup":
+                self._setup(payload or {})
             else:
                 self._error("ruta desconocida", 404)
         except Exception as exc:
@@ -355,6 +381,18 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/api/chat/info":
             self._json({"configured": bool(cfg.chat.api_key), "model": cfg.chat.model})
 
+        elif path == "/api/setup/status":
+            local = cfg.root / "config.local.toml"
+            needs = True
+            try:
+                data = tomllib.loads(local.read_text(encoding="utf-8")) if local.exists() else {}
+                portal = data.get("portal", {})
+                needs = not (portal.get("username") and portal.get("password"))
+            except Exception:
+                needs = True
+            self._json({"needs_setup": needs,
+                        "mode": "app" if getattr(sys, "frozen", False) else "dev"})
+
         elif path == "/api/sessions":
             try:
                 Portal(cfg).connect(relogin=False)
@@ -379,6 +417,10 @@ class Handler(BaseHTTPRequestHandler):
             jid = self.jobs.start(
                 "Revisando cursos",
                 lambda log: actions.run_check(cfg, days=int(payload.get("days", 30)), log=log))
+        elif kind == "login":
+            jid = self.jobs.start(
+                "Conectando con el aula (Microsoft)",
+                lambda log: actions.run_login(cfg, log=log))
         elif kind == "refresh_session":
             jid = self.jobs.start(
                 "Renovando sesión de Google",

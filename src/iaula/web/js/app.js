@@ -100,8 +100,23 @@ function initTaskbar() {
   setInterval(tickClock, 20000);
 }
 
+async function boot() {
+  let status = { needs_setup: false };
+  try { status = await get("/api/setup/status"); } catch { /* servidor viejo */ }
+  if (status.needs_setup) {
+    document.body.classList.add("setup-mode");
+    const { renderSetup } = await import("./setup.js");
+    renderSetup(document.getElementById("view"));
+    return;
+  }
+  document.body.classList.remove("setup-mode");
+  initTaskbar();
+  renderRoute();
+  refreshStatus();
+  refreshTray();
+}
+
 initScene();
-initTaskbar();
 
 const checkBtn = document.getElementById("btn-check");
 checkBtn.prepend(icon("refresh"));
@@ -114,6 +129,4 @@ setOnJobDone(() => {
 });
 
 addEventListener("hashchange", renderRoute);
-renderRoute();
-refreshStatus();
-refreshTray();
+boot();
