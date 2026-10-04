@@ -22,7 +22,8 @@ Licencia **MIT**. Hecho por y para estudiantes.
 - **Asistente** — pregúntale por tus cursos, tareas o el enunciado de un taller
   (la clave de IA viene incluida; no tienes que configurar nada).
 - **NotebookLM** *(opcional, avanzado)* — sube los archivos de cada materia a **tus propios**
-  cuadernos de NotebookLM.
+  cuadernos de NotebookLM. En la primera configuración elegís el navegador
+  (detecta los instalados: Brave, Chrome, Edge, Firefox; Brave por defecto).
 
 **Desinstalar:** Configuración → Aplicaciones → IAula Virtual.
 El desinstalador es **profundo**: borra tus datos locales, descargas y el navegador interno.

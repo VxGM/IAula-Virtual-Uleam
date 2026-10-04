@@ -86,8 +86,8 @@ def default_browser() -> Browser | None:
     browsers = detect_browsers()
     if not browsers:
         return None
-    # Preferencia: Brave (sesión Google ya usada) > Chrome > Edge > Firefox
-    prefer = {"brave", "chrome", "msedge", "firefox"}
+    # Preferencia determinista: Brave (sesión Google ya usada) > Chrome > Edge > Firefox
+    prefer = ("brave", "chrome", "msedge", "firefox")
     for key in prefer:
         for b in browsers:
             if b.key == key:
