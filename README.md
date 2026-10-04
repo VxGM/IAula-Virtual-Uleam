@@ -10,7 +10,7 @@ Licencia **MIT**. Hecho por y para estudiantes.
 
 ## Para estudiantes (no necesitas saber nada de tecnología)
 
-1. Descarga **`IAulaVirtual-Setup-1.0.0.exe`** desde la pestaña **Releases** de este repositorio.
+1. Descarga **`IAulaVirtual-Setup-1.1.0.exe`** desde la pestaña **Releases** de este repositorio.
 2. Doble clic → *Siguiente, siguiente, instalar* → se abre solo.
 3. Primera pantalla: escribe tu **usuario y contraseña de la ULEAM**. Se guardan **solo en tu PC**.
 4. Se abrirá una ventana de Microsoft: inicia sesión **una vez**. Ya está.
@@ -79,9 +79,9 @@ mkdir .build
 
 # 2) Icono + build + instalador
 python packaging\make_icon.py
-powershell -ExecutionPolicy Bypass -File packaging\build.ps1 -Version 1.0.0
+powershell -ExecutionPolicy Bypass -File packaging\build.ps1 -Version 1.1.0
 
-# Resultado: packaging\Output\IAulaVirtual-Setup-1.0.0.exe
+# Resultado: packaging\Output\IAulaVirtual-Setup-1.1.0.exe
 ```
 
 El instalador **verifica e instala las dependencias**:

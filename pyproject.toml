@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "iaula"
-version = "1.0.0"
+version = "1.1.0"
 description = "Monitor del aula virtual: novedades de cursos y tareas, descargas y NotebookLM bajo demanda"
 requires-python = ">=3.11"
 dependencies = [

@@ -1,7 +1,7 @@
 #define MyAppName "IAula Virtual"
 #define MyAppPublisher "VxGM"
 #ifndef MyAppVersion
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #endif
 
 [Setup]
