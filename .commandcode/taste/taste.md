@@ -18,3 +18,6 @@
 - Comfortable pasting credentials and API keys directly into the chat (portal password, OpenAI key) and relies on the agent to store them in gitignored local config rather than treating the chat as unsafe. Confidence: 0.5
 - Works entirely on Windows and expects Windows-native tooling and integrations (batch/PowerShell scripts, Task Scheduler, Toast notifications) rather than cross-platform equivalents. Confidence: 0.55
 - Wants recurring/scheduled automation (e.g. a daily background check delivered as a desktop notification) in addition to on-demand commands, rather than manual runs only. Confidence: 0.45
+- Open-sources personal projects and wants them usable by non-technical people (university peers); prioritizes a simple, functional, out-of-the-box experience over power-user configurability. Confidence: 0.6
+- Prefers shipping software to non-technical users as a self-contained installer (.exe) with an in-app first-run setup wizard (credentials, optional keys) and a clean/deep uninstall, over manual config-file editing or requiring Python setup. Confidence: 0.55
+- Licenses open-source personal projects under MIT. Confidence: 0.5

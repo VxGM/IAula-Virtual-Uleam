@@ -1,0 +1,25 @@
+services:
+  iaula:
+    build:
+      context: ../..
+      dockerfile: packaging/docker/Dockerfile
+      args:
+        BUNDLED_OPENAI_KEY: ${OPENAI_API_KEY:-}
+    ports:
+      - "${WEB_PORT:-7800}:7800"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-5.4-mini}
+      - PORTAL_BASE_URL=${PORTAL_BASE_URL:-https://aulavirtualmoodle.uleam.edu.ec}
+      - PORTAL_USERNAME=${PORTAL_USERNAME:-}
+      - PORTAL_PASSWORD=${PORTAL_PASSWORD:-}
+      - WEB_PORT=7800
+      - IAULA_HOME=/app/data
+    volumes:
+      - iaula-data:/app/data
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+volumes:
+  iaula-data:
