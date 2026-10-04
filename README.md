@@ -83,6 +83,11 @@ powershell -ExecutionPolicy Bypass -File packaging\build.ps1 -Version 1.0.0
 # Resultado: packaging\Output\IAulaVirtual-Setup-1.0.0.exe
 ```
 
+El instalador **verifica e instala las dependencias**:
+- **WebView2 Runtime** — se baja e instala solo si no está (necesario para la ventana).
+- **Navegador interno (Playwright Chromium, ~180 MB)** — casilla opcional en
+  *Componentes opcionales*; si no se marca, se descarga en el primer inicio de sesión.
+
 Publica el `.exe` en una **Release** de GitHub (los instaladores no van al repositorio).
 
 > ⚠️ La clave de OpenAI incluida es **extraíble** del instalador público. Úsala con tope de gasto
