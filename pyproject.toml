@@ -17,6 +17,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "playwright>=1.60", "pyinstaller>=6.22"]
+mcp = ["mcp>=2.0.0"]
 
 [project.scripts]
 iaula = "iaula.cli:main"

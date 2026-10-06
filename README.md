@@ -33,6 +33,50 @@ El desinstalador es **profundo**: borra tus datos locales, descargas y el navega
 
 ---
 
+## Conectar con cualquier agente IA (MCP)
+
+IAula trae un servidor **MCP** (Model Context Protocol): cualquier agente
+(Claude Desktop, Claude Code, Cursor, …) puede ver tus cursos, tareas y
+**descargar los PDFs y archivos de cada tarea con su contenido extraído**
+para tener contexto sólido. Corre desde el repo (no desde el instalador):
+
+```bash
+pip install -e ".[mcp]"     # una vez (SDK de MCP)
+python -m iaula mcp         # servidor por stdio (local)
+python -m iaula mcp --sse   # por HTTP en 127.0.0.1:7801
+```
+
+**Claude Code** (desde el repo):
+```bash
+claude mcp add iaula -- .venv\Scripts\python -m iaula mcp
+```
+
+**Claude Desktop** (`claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "iaula": {
+      "command": "C:\\Users\\ASUS\\IAula Virtual\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "iaula", "mcp"],
+      "cwd": "C:\\Users\\ASUS\\IAula Virtual"
+    }
+  }
+}
+```
+
+**Cursor:** Settings → MCP → Add server (Command): `.venv\Scripts\python`,
+Arguments: `-m iaula mcp`.
+
+**Herramientas:** `status`, `courses`, `check` (novedades), `tasks` (entregas
+próximas), `task` (descripción + adjuntos descargados + texto extraído),
+`materials`, `download`, `extract`, `notebooklm_sync`.
+
+> Ejemplo para un agente: *"¿qué tareas tengo? descargame los archivos de
+> la de Power BI y resúmeme el enunciado"* — el agente llama a `tasks` y
+> `task` solo.
+
+---
+
 ## Para desarrolladores
 
 Requiere **Python 3.11+** en Windows.
@@ -40,11 +84,12 @@ Requiere **Python 3.11+** en Windows.
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
-pip install -e ".[dev]"
+pip install -e ".[dev,mcp]"
 playwright install chromium
 python -m iaula login      # sesión del aula (una vez)
 python -m iaula app        # app de escritorio (ventana propia)
 python -m iaula gui        # o el panel en el navegador
+python -m iaula mcp        # o el servidor MCP para agentes IA
 ```
 
 ### Comandos
@@ -61,6 +106,7 @@ python -m iaula nlm sync --course X | --all [--no-wait]
 python -m iaula nlm status
 python -m iaula app                               # app de escritorio
 python -m iaula gui                               # panel en el navegador
+python -m iaula mcp [--sse] [--port 7801]         # servidor MCP para agentes IA
 ```
 
 - **Datos en desarrollo:** `config.toml` + `config.local.toml` (credenciales, gitignored) y `data/`, `downloads/`.

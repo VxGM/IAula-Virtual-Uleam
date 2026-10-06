@@ -65,6 +65,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     a = sub.add_parser("app", help="App de escritorio (ventana propia)")
     a.add_argument("--port", type=int, default=7800)
+
+    s = sub.add_parser("mcp", help="Servidor MCP para agentes IA (stdio)")
+    s.add_argument("--sse", action="store_true", help="Servir por HTTP (SSE)")
+    s.add_argument("--port", type=int, default=7801)
     return p
 
 
@@ -140,6 +144,12 @@ def cmd_app(cfg, args) -> int:
     return desktop.run(cfg, port=args.port)
 
 
+def cmd_mcp(cfg, args) -> int:
+    from iaula.mcp_server import serve
+    serve(port=args.port, sse=args.sse)
+    return 0
+
+
 def run(cfg, args) -> int:
     if args.cmd == "login":
         print(login(cfg, headless=args.headless))
@@ -171,6 +181,8 @@ def run(cfg, args) -> int:
         return cmd_gui(cfg, args)
     elif args.cmd == "app":
         return cmd_app(cfg, args)
+    elif args.cmd == "mcp":
+        return cmd_mcp(cfg, args)
     return 0
 
 

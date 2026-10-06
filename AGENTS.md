@@ -24,3 +24,16 @@ Reglas:
 - Pedir confirmación antes de descargar/subir cursos completos sin que el usuario lo pida.
 - Nunca imprimir ni commitear credenciales (`config.local.toml`, `data/`).
 - Chequeo diario: `scripts\install-daily-task.ps1 -Time 07:30` (tarea `IAula-Check`).
+
+## MCP (conectar cualquier agente IA)
+
+Servidor MCP incluido: `.venv\Scripts\python -m iaula mcp` (stdio)
+o `--sse` (HTTP en 127.0.0.1:7801). Requiere `pip install -e ".[mcp]"`.
+
+Herramientas: `status`, `courses`, `check`, `tasks`, `task`
+(descripción + adjuntos descargados + texto extraído de PDFs/CSVs),
+`materials`, `download`, `extract`, `notebooklm_sync`.
+
+Para Claude Code: `claude mcp add iaula -- .venv\Scripts\python -m iaula mcp`.
+Para Claude Desktop: `mcpServers.iaula` en `claude_desktop_config.json`
+con command = el python del venv y args = `["-m", "iaula", "mcp"]`.
