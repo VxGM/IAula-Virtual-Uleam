@@ -69,7 +69,9 @@ Arguments: `-m iaula mcp`.
 
 **Herramientas:** `status`, `courses`, `check` (novedades), `tasks` (entregas
 próximas), `task` (descripción + adjuntos descargados + texto extraído),
-`materials`, `download`, `extract`, `notebooklm_sync`.
+`materials`, `download`, `extract`, `notebooklm_sync`,
+`notebooklm_refresh` (renueva la sesión de Google; cierra Brave si hace
+falta).
 
 > Ejemplo para un agente: *"¿qué tareas tengo? descargame los archivos de
 > la de Power BI y resúmeme el enunciado"* — el agente llama a `tasks` y

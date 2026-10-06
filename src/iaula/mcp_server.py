@@ -177,6 +177,29 @@ def notebooklm_sync(course: str = "", wait: bool = True) -> dict | list[dict]:
     return actions.run_nlm_sync_all(cfg, log=_log, wait=wait)
 
 
+@mcp.tool()
+def notebooklm_refresh() -> dict:
+    """Renueva la sesión de Google/NotebookLM si caducó.
+
+    Primero intenta el refresco silencioso (server-side). Si no
+    alcanza, cierra Brave y extrae la sesión de tu perfil de Brave
+    (igual que el botón "Renovar sesión" del panel).
+    Aviso: esta segunda vía cierra Brave si está abierto.
+    """
+    cfg = load_config()
+    try:
+        nlm._run("auth", "refresh")
+        if nlm.auth_ok():
+            return {"ok": True, "method": "auth-refresh"}
+    except nlm.NotebookLMError:
+        pass
+    try:
+        actions.run_brave_refresh(cfg, log=_log)
+    except RuntimeError as exc:
+        raise RuntimeError(f"No pude renovar la sesión: {exc}") from exc
+    return {"ok": True, "method": "brave-extract"}
+
+
 def serve(port: int = 7801, sse: bool = False) -> None:
     if sse:
         # Solo escucha en localhost: las credenciales del aula son locales.

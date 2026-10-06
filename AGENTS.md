@@ -32,7 +32,9 @@ o `--sse` (HTTP en 127.0.0.1:7801). Requiere `pip install -e ".[mcp]"`.
 
 Herramientas: `status`, `courses`, `check`, `tasks`, `task`
 (descripción + adjuntos descargados + texto extraído de PDFs/CSVs),
-`materials`, `download`, `extract`, `notebooklm_sync`.
+`materials`, `download`, `extract`, `notebooklm_sync`,
+`notebooklm_refresh` (renueva la sesión de Google; cierra Brave si hace
+falta).
 
 Para Claude Code: `claude mcp add iaula -- .venv\Scripts\python -m iaula mcp`.
 Para Claude Desktop: `mcpServers.iaula` en `claude_desktop_config.json`
