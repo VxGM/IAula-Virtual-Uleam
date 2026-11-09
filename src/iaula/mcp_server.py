@@ -25,9 +25,10 @@ from iaula.portal.tasks import list_tasks as _list_tasks
 
 mcp = MCPServer("iaula", instructions=(
     "Herramientas del aula virtual de la ULEAM (Moodle): cursos, materiales, "
-    "tareas con vencimientos, y contexto completo de cada tarea (descripción "
-    "más el contenido extraído de sus archivos adjuntos). Los archivos se "
-    "descargan bajo downloads/ y se pueden subir a NotebookLM."
+    "tareas con vencimientos, contexto completo de cada tarea (descripción "
+    "más el contenido extraído de sus archivos adjuntos) y subida de archivos "
+    "para entregar una tarea. Los archivos se descargan bajo downloads/ y se "
+    "pueden subir a NotebookLM."
 ))
 
 _LOGIN_HINT = (
@@ -130,6 +131,27 @@ def task(name_or_id: str, download: bool = True, include_content: bool = True) -
             contents.append(entry)
     res["contents"] = contents
     return res
+
+
+@mcp.tool()
+def upload_task(task: str, files: list[str], submit: bool = True) -> dict:
+    """Sube archivos a una tarea y la entrega.
+
+    task acepta el id, parte de la URL o parte del nombre de la tarea.
+    files son rutas de archivos (absolutas o relativas a la carpeta del
+    proyecto). Con submit=True (por defecto) la tarea queda entregada; con
+    submit=False los archivos solo se adjuntan como borrador. La tarea debe
+    seguir admitiendo entregas.
+    """
+    cfg = load_config()
+    if isinstance(files, str):
+        files = [files]
+    if not files:
+        raise ValueError("Falta indicar al menos un archivo.")
+    try:
+        return actions.run_upload(cfg, task, files, submit=submit, log=_log)
+    except LookupError as exc:
+        raise ValueError(str(exc)) from exc
 
 
 @mcp.tool()

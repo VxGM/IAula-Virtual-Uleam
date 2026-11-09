@@ -69,13 +69,17 @@ Arguments: `-m iaula mcp`.
 
 **Herramientas:** `status`, `courses`, `check` (novedades), `tasks` (entregas
 próximas), `task` (descripción + adjuntos descargados + texto extraído),
-`materials`, `download`, `extract`, `notebooklm_sync`,
-`notebooklm_refresh` (renueva la sesión de Google; cierra Brave si hace
-falta).
+`upload_task` (sube uno o varios archivos a una tarea y la entrega; con
+`submit=false` solo los adjunta), `materials`, `download`, `extract`,
+`notebooklm_sync`, `notebooklm_refresh` (renueva la sesión de Google; cierra
+Brave si hace falta).
 
 > Ejemplo para un agente: *"¿qué tareas tengo? descargame los archivos de
 > la de Power BI y resúmeme el enunciado"* — el agente llama a `tasks` y
 > `task` solo.
+>
+> *"súbele mi informe.pdf a la tarea de Power BI"* — el agente llama a
+> `upload_task` con la ruta del archivo.
 
 ---
 

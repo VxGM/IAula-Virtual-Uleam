@@ -13,6 +13,7 @@ from iaula.portal.auth import login
 from iaula.portal.client import Portal
 from iaula.portal.courses import find_course, list_courses
 from iaula.portal.materials import DOWNLOADABLE, list_materials
+from iaula.portal.submission import upload_submission
 from iaula.portal.tasks import list_tasks, task_context
 from iaula.report import build_report, save_report
 from iaula.state import State
@@ -80,24 +81,20 @@ def run_download_all(cfg: Config, log: Log = print) -> dict:
     return {"files": total}
 
 
-def run_task(cfg: Config, task_query: str, download: bool = False, log: Log = print) -> dict:
-    state = State(cfg)
+def _find_task(state: State, task_query: str) -> dict:
     tasks = state.tasks_all()
-    task = None
     for t in tasks:
         if str(t["id"]) == str(task_query) or str(task_query) in (t.get("url") or ""):
-            task = t
-            break
-    if task is None:
-        q = str(task_query).lower()
-        hits = [t for t in tasks if q in t["name"].lower()]
-        if len(hits) != 1:
-            names = "; ".join(f"{t['id']} {t['name']}" for t in tasks[:20])
-            raise LookupError(f"Tarea '{task_query}' → {len(hits)} coincidencias. Opciones: {names}")
-        task = hits[0]
-    names = {c["id"]: c["short"] for c in state.get_courses()}
-    course = names.get(task["course_id"], "")
-    portal = Portal(cfg).connect()
+            return t
+    q = str(task_query).lower()
+    hits = [t for t in tasks if q in t["name"].lower()]
+    if len(hits) != 1:
+        names = "; ".join(f"{t['id']} {t['name']}" for t in tasks[:20])
+        raise LookupError(f"Tarea '{task_query}' → {len(hits)} coincidencias. Opciones: {names}")
+    return hits[0]
+
+
+def _task_url(portal: Portal, state: State, task: dict) -> str:
     url = task.get("url") or ""
     if not url:
         try:
@@ -112,6 +109,16 @@ def run_task(cfg: Config, task_query: str, download: bool = False, log: Log = pr
     if not task.get("url"):
         state.db.execute("UPDATE tasks SET url=? WHERE id=?", (url, task["id"]))
         state.db.commit()
+    return url
+
+
+def run_task(cfg: Config, task_query: str, download: bool = False, log: Log = print) -> dict:
+    state = State(cfg)
+    task = _find_task(state, task_query)
+    names = {c["id"]: c["short"] for c in state.get_courses()}
+    course = names.get(task["course_id"], "")
+    portal = Portal(cfg).connect()
+    url = _task_url(portal, state, task)
     ctx = task_context(portal, url)
     log(f"Tarea: {task['name']} ({course})")
     if ctx.intro:
@@ -134,6 +141,27 @@ def run_task(cfg: Config, task_query: str, download: bool = False, log: Log = pr
             out["downloaded"].append(str(path))
             log(f"  OK -> {path}")
     return out
+
+
+def run_upload(cfg: Config, task_query: str, files: list[str], submit: bool = True,
+               log: Log = print) -> dict:
+    state = State(cfg)
+    portal = Portal(cfg).connect()
+    try:
+        task = _find_task(state, task_query)
+    except LookupError:
+        state.record_tasks(list_tasks(portal, days=365, past_days=365))
+        task = _find_task(state, task_query)
+    names = {c["id"]: c["short"] for c in state.get_courses()}
+    course = names.get(task["course_id"], "")
+    url = _task_url(portal, state, task)
+    paths = [Path(f) if Path(f).is_absolute() else cfg.root / f for f in files]
+    res = upload_submission(portal, url, paths, submit=submit)
+    log(f"{res.message} ({task['name']} — {course})")
+    return {
+        "id": task["id"], "course": course, "name": task["name"], "url": url,
+        "files": res.files, "submitted": res.submitted, "message": res.message,
+    }
 
 
 def ensure_chromium(log: Log = print) -> None:
