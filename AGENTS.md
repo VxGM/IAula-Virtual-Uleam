@@ -15,15 +15,17 @@ Portal: Moodle ULEAM (login Microsoft/OIDC). Ejecutar siempre desde la raíz del
 | "estado de NotebookLM" | `nlm status` |
 | "abre el panel / la interfaz gráfica" | `gui` (http://127.0.0.1:7800) |
 | "abre la app de escritorio" | `app` (ventana propia) |
+| "revisa qué falta / dependencias / diagnóstico" | `doctor [--json] [--repair]` |
 
 Reglas:
 - Si falla por sesión vencida y el re-login automático no basta: `login` (abre navegador visible).
-- `nlm` usa la sesión de Google guardada; verificar con `nlm status`. Si caducó: probar `notebooklm auth refresh`; si sigue, cerrar Brave por completo y correr `.venv\Scripts\python scripts\refresh-google-session.py` (extrae la sesión del Brave), luego `nlm status`. En el panel hay un botón "Renovar sesión" (vista NotebookLM) que cierra Brave y corre el script solo.
-- Asistente del panel: usa la API de OpenAI (key en `[chat] api_key` de `config.local.toml`; modelo en `[chat] model` de `config.toml`). El servidor inyecta cursos/tareas/materiales reales y, por cada tarea pendiente, su descripción y el contenido de sus adjuntos (cache ~15 min).
+- `nlm` usa la sesión de Google guardada; verificar con `nlm status`. Si caducó: probar `notebooklm auth refresh`; si sigue, cerrar Brave por completo y correr `.venv\Scripts\python scripts\refresh-google-session.py` (extrae la sesión del Brave), luego `nlm status`. En el panel hay un botón "Renovar sesión" (vista NotebookLM) que cierra el navegador preferido y extrae sus cookies solo, también en la app instalada.
+- Asistente del panel: compatible con OpenAI (`[chat] base_url` y `model` en `config.toml`) y con cualquier proveedor OpenAI-compatible. La key y la contraseña del aula viven cifradas con DPAPI en `data/secrets.bin`; se configuran en **Ajustes** o, en desarrollo, con `[chat] api_key` en `config.local.toml` (se migra al vault al iniciar). Nunca se distribuye una key. El servidor inyecta cursos/tareas/materiales reales y, por cada tarea pendiente, su descripción y el contenido de sus adjuntos (cache ~15 min).
 - Primer `check` = línea base (no reporta novedades). Las siguientes sí.
 - Pedir confirmación antes de descargar/subir cursos completos sin que el usuario lo pida.
 - Nunca imprimir ni commitear credenciales (`config.local.toml`, `data/`).
-- Chequeo diario: `scripts\install-daily-task.ps1 -Time 07:30` (tarea `IAula-Check`).
+- Chequeo diario: `scripts\install-daily-task.ps1 -Time 07:30` (tarea `IAula-Check`) o, en la app instalada, `<exe> --install-task`.
+- Landing pública en `landing/` (estática + nginx); desplegada en Dokploy con `landing/Dockerfile`. No incluye secretos.
 
 ## MCP (conectar cualquier agente IA)
 

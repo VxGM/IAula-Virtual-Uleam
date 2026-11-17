@@ -1,5 +1,5 @@
-import { get } from "../api.js";
-import { el, icon, skeleton } from "../ui.js";
+import { get, post } from "../api.js";
+import { el, icon, skeleton, toast } from "../ui.js";
 import { runAction } from "../actions.js";
 
 const REFRESH_CMD = "python scripts\\refresh-google-session.py";
@@ -96,9 +96,45 @@ function uploadedPanel(data) {
   );
 }
 
+function browserPanel(info) {
+  const { browsers = [], default: defKey } = info;
+  if (!browsers.length) return null;
+  const radios = [];
+  const labels = browsers.map((b) => {
+    const radio = el("input", { type: "radio", name: "browser-pick", value: b.key });
+    if (b.key === defKey) radio.checked = true;
+    radios.push(radio);
+    return el("label", { class: "setup-label", style: "display:flex;align-items:center;gap:8px;cursor:pointer" },
+      radio, b.name, b.key === defKey ? el("span", { class: "small muted" }, "(recomendado)") : null);
+  });
+  const save = el("button", { class: "glossy-btn glossy-btn--sm" }, icon("check"), "Guardar navegador");
+  save.addEventListener("click", async () => {
+    const sel = radios.find((r) => r.checked) || radios[0];
+    const name = browsers.find((b) => b.key === sel.value)?.name || sel.value;
+    save.classList.add("is-busy");
+    try {
+      await post("/api/setup/browser", { browser: sel.value });
+      toast(`Navegador guardado: ${name}`, "ok");
+    } catch (e) {
+      toast(e.message, "err");
+    } finally {
+      save.classList.remove("is-busy");
+    }
+  });
+  return el("section", { class: "panel glass reveal" },
+    el("div", { class: "panel-head" }, el("h2", null, "Navegador preferido"), icon("globe", 18)),
+    el("div", { class: "panel-body" },
+      el("p", { class: "small muted", style: "margin-bottom:10px" },
+        "IAula abre uno de tus navegadores instalados para iniciar sesión en el aula."),
+      ...labels,
+      el("div", { style: "margin-top:14px" }, save)),
+  );
+}
+
 export async function render(root) {
   root.append(el("div", { class: "panel glass" }, el("div", { class: "panel-body" }, skeleton(3, 52))));
   let data;
+  let browserInfo = null;
   try {
     data = await get("/api/notebooklm");
   } catch (e) {
@@ -106,10 +142,13 @@ export async function render(root) {
     root.append(el("div", { class: "panel glass" }, el("div", { class: "panel-body" }, `Error: ${e.message}`)));
     return;
   }
+  try { browserInfo = await get("/api/notebooklm/browsers"); } catch { /* ignore */ }
   root.innerHTML = "";
+  const extra = browserInfo ? browserPanel(browserInfo) : null;
   root.append(el("div", { class: "nlm-grid" },
     statusShell(),
     coursesPanel(data),
     uploadedPanel(data),
+    ...(extra ? [extra] : []),
   ));
 }

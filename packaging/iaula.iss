@@ -1,7 +1,7 @@
 #define MyAppName "IAula Virtual"
 #define MyAppPublisher "VxGM"
 #ifndef MyAppVersion
-#define MyAppVersion "1.1.0"
+#define MyAppVersion "1.2.0"
 #endif
 
 [Setup]
@@ -9,6 +9,7 @@ AppId={{B7C4E1A2-9F3D-4E58-A6D1-2C8F5B0E7A94}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+AppMutex=IAulaVirtual
 DefaultDirName={autopf}\IAulaVirtual
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
@@ -30,10 +31,12 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 [CustomMessages]
 spanish.CreateDesktopIcon=Crear un acceso directo en el escritorio
 spanish.DownloadChromium=Descargar el navegador interno ahora (~180 MB, una sola vez)
+spanish.DailyCheck=Crear recordatorio diario de revisión (07:30)
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "Accesos directos:"
 Name: "chromium"; Description: "{cm:DownloadChromium}"; GroupDescription: "Componentes opcionales:"
+Name: "dailycheck"; Description: "{cm:DailyCheck}"; GroupDescription: "Componentes opcionales:"
 
 [Files]
 Source: "..\build\dist\IAulaVirtual\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
@@ -43,7 +46,9 @@ Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\IAulaVirtual.exe"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\IAulaVirtual.exe"; Tasks: desktopicon
 
 [Run]
+Filename: "{app}\IAulaVirtual.exe"; Parameters: "--migrate-legacy"; Flags: runhidden waituntilterminated; StatusMsg: "Migrando datos de la versión anterior…"
 Filename: "{app}\IAulaVirtual.exe"; Parameters: "--ensure-deps"; Flags: runhidden waituntilterminated; Tasks: chromium; StatusMsg: "Descargando el navegador interno…"
+Filename: "{app}\IAulaVirtual.exe"; Parameters: "--install-task"; Flags: runhidden waituntilterminated; Tasks: dailycheck; StatusMsg: "Creando el recordatorio diario…"
 Filename: "{app}\IAulaVirtual.exe"; Description: "Abrir {#MyAppName} ahora"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]

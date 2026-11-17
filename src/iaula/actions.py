@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-import subprocess
-import sys
 import time
 from pathlib import Path
 from typing import Callable
 
 from iaula import notebooklm as nlm
-from iaula.config import Config
+from iaula.config import Config, save_local
 from iaula.downloader import course_dir, download, download_url, safe, sha256
-from iaula.portal.auth import login
+from iaula.portal.auth import ensure_chromium, login
 from iaula.portal.client import Portal
 from iaula.portal.courses import find_course, list_courses
 from iaula.portal.materials import DOWNLOADABLE, list_materials
@@ -164,88 +162,37 @@ def run_upload(cfg: Config, task_query: str, files: list[str], submit: bool = Tr
     }
 
 
-def ensure_chromium(log: Log = print) -> None:
-    try:
-        from playwright.sync_api import sync_playwright
-        with sync_playwright() as pw:
-            path = pw.chromium.executable_path
-        if path and Path(path).exists():
-            return
-    except Exception:
-        pass
-    log("Preparando el navegador interno (una sola vez, ~150 MB)…")
-    cmd: list[str]
-    try:
-        from playwright._impl._driver import compute_driver_executable
-        res = compute_driver_executable()
-        parts = list(res) if isinstance(res, (tuple, list)) else [res]
-        cmd = [*[str(x) for x in parts], "install", "chromium"]
-    except Exception:
-        cmd = [sys.executable, "-m", "playwright", "install", "chromium"]
-    p = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
-                       errors="replace", timeout=2400)
-    if p.returncode != 0:
-        raise RuntimeError("No pude preparar el navegador: " + (p.stderr or p.stdout or "")[-300:])
-    log("Navegador listo.")
-
-
 def run_login(cfg: Config, headless: bool = False, log: Log = print) -> dict:
-    ensure_chromium(log)
+    from iaula.browsers import playwright_browser
+    b = playwright_browser(cfg.browser)
+    if b is not None:
+        log(f"Usando navegador: {b.name} ({b.path})")
     log("Abriendo la ventana de inicio de sesión de la universidad…")
     login(cfg, headless=headless)
     log("Sesión guardada. Comprobando el aula…")
     courses = list_courses(Portal(cfg).connect())
     log(f"Conectado: {len(courses)} cursos en curso")
-    return {"courses": len(courses)}
+    return {"courses": len(courses), "browser": b.key if b else None}
 
 
 def run_login_with_browser(cfg: Config, browser_key: str = "", headless: bool = False, log: Log = print) -> dict:
-    ensure_chromium(log)
-    from iaula.browsers import detect_browsers
-    browsers = {b.key: b for b in detect_browsers()}
-    b = browsers.get(browser_key) if browser_key else None
+    from iaula.browsers import playwright_browser
+    b = playwright_browser(browser_key) or playwright_browser("")
     if b is None:
-        b = browsers.get("brave") or browsers.get("chrome") or default_browser()
-        if b is None:
-            raise RuntimeError("No se detectó navegador compatible")
+        raise RuntimeError("No se detectó Brave, Chrome ni Edge instalado")
     log(f"Usando navegador: {b.name} ({b.path})")
     login(cfg, headless=headless, browser=b.path)
+    save_local(cfg.root, "browser", {"default": b.key})
+    cfg.browser = b.key
     log("Sesión guardada. Comprobando el aula…")
     courses = list_courses(Portal(cfg).connect())
     log(f"Conectado: {len(courses)} cursos en curso")
-    cfg.notebooklm_browser = browser_key
-    return {"courses": len(courses), "browser": browser_key}
+    return {"courses": len(courses), "browser": b.key}
 
 
 def run_brave_refresh(cfg: Config, log: Log = print) -> dict:
-    script = None
-    for cand in (cfg.root / "scripts" / "refresh-google-session.py",
-                 Path(sys.executable).parent / "scripts" / "refresh-google-session.py",
-                 Path(getattr(sys, "_MEIPASS", str(Path(__file__).resolve().parents[2]))) / "scripts" / "refresh-google-session.py",
-                 Path(__file__).resolve().parents[2] / "scripts" / "refresh-google-session.py"):
-        if cand.exists():
-            script = cand
-            break
-    if script is None:
-        raise RuntimeError("No encuentro el script de renovación (¿instalación incompleta?)")
-    log("Cerrando Brave (si está abierto)…")
-    subprocess.run(["taskkill", "/IM", "brave.exe", "/F"], capture_output=True)
-    for _ in range(15):
-        out = subprocess.run(["tasklist", "/FI", "IMAGENAME eq brave.exe"],
-                             capture_output=True, text=True)
-        if "brave.exe" not in out.stdout:
-            break
-        time.sleep(1)
-    else:
-        raise RuntimeError("Brave no se cerró; ciérralo a mano e intenta otra vez")
-    log("Brave cerrado. Extrayendo la sesión de Google…")
-    p = subprocess.run([sys.executable, str(script)], capture_output=True, text=True,
-                       encoding="utf-8", errors="replace", timeout=600)
-    for line in (p.stdout or "").strip().splitlines():
-        log(line)
-    if p.returncode != 0:
-        tail = (p.stderr or "").strip().splitlines()[-3:]
-        raise RuntimeError(f"El script falló ({p.returncode}): " + " / ".join(tail))
+    from iaula import google_session
+    google_session.refresh(cfg, log)
     log("Verificando con NotebookLM…")
     ok = nlm.auth_ok()
     log("Sesión: " + ("OK" if ok else "sigue sin responder"))

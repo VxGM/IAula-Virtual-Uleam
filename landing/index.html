@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IAula Virtual · Tu aula de la ULEAM, sin abrir Moodle</title>
+  <meta name="description" content="Panel local para estudiantes de la ULEAM: novedades del aula, entregas próximas, descarga de materiales, Asistente con IA y NotebookLM. Gratis, código abierto y sin telemetría." />
+  <meta name="theme-color" content="#0078d7" />
+  <meta name="color-scheme" content="light" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="styles/tokens.css" />
+  <link rel="stylesheet" href="styles/landing.css" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="IAula Virtual · Tu aula de la ULEAM, sin abrir Moodle" />
+  <meta property="og:description" content="Novedades, materiales y entregas en un panel local con estética Frutiger Aero. Asistente con tu propia API key y NotebookLM opcional." />
+  <meta property="og:image" content="assets/og.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="IAula Virtual: tu aula de la ULEAM, sin abrir Moodle." />
+  <meta name="twitter:card" content="summary_large_image" />
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+  <div class="scene" aria-hidden="true"></div>
+  <div class="lens" id="lens" aria-hidden="true"></div>
+  <div class="fx" id="fx">
+    <span class="orb orb-a"></span>
+    <span class="orb orb-b"></span>
+    <span class="orb orb-c"></span>
+  </div>
+  <div class="fx" id="bubbles" aria-hidden="true"></div>
+
+  <svg width="0" height="0" class="svg-defs" aria-hidden="true">
+    <defs>
+      <linearGradient id="fish-grad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#ffb53e" />
+        <stop offset="55%" stop-color="#f77f1e" />
+        <stop offset="100%" stop-color="#d84a1e" />
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <svg class="fish fish-a" viewBox="0 0 96 60" aria-hidden="true">
+    <path class="fish-tail" d="M22 30 L4 14 Q10 30 4 46 Z" fill="url(#fish-grad)" opacity="0.9" />
+    <path d="M38 16 Q48 4 58 15 Q48 12 38 16 Z" fill="#d84a1e" opacity="0.85" />
+    <ellipse cx="48" cy="30" rx="30" ry="16" fill="url(#fish-grad)" />
+    <ellipse cx="46" cy="23" rx="22" ry="7" fill="#fff" opacity="0.35" />
+    <path d="M44 16 Q40 30 44 44" stroke="#fff" stroke-width="3" opacity="0.45" fill="none" />
+    <path d="M56 16 Q52 30 56 44" stroke="#fff" stroke-width="2.5" opacity="0.35" fill="none" />
+    <path d="M44 42 Q48 52 56 46 Q50 42 44 42 Z" fill="#d84a1e" opacity="0.8" />
+    <circle cx="68" cy="26" r="4.5" fill="#fff" />
+    <circle cx="69" cy="26" r="2.4" fill="#123" />
+    <circle cx="70" cy="25" r="0.9" fill="#fff" />
+  </svg>
+
+  <header class="site-header glass">
+    <div class="header-inner">
+      <a class="brand" href="#inicio" aria-label="IAula Virtual, inicio">
+        <svg width="34" height="34" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <circle cx="17" cy="21" r="12" fill="rgba(255,255,255,0.28)" stroke="#fff" stroke-width="1.6" />
+          <circle cx="12.5" cy="16.5" r="3.4" fill="#fff" opacity="0.9" />
+          <circle cx="29" cy="13" r="6" fill="rgba(255,255,255,0.22)" stroke="#fff" stroke-width="1.3" />
+          <circle cx="27" cy="11" r="1.6" fill="#fff" opacity="0.9" />
+          <circle cx="30" cy="29" r="4" fill="rgba(255,255,255,0.22)" stroke="#fff" stroke-width="1.2" />
+        </svg>
+        <span>IAula <span class="accent">Virtual</span></span>
+      </a>
+
+      <nav class="nav" aria-label="Secciones">
+        <a href="#que-hace">Qué hace</a>
+        <a href="#vistas">Vistas</a>
+        <a href="#instalar">Cómo se instala</a>
+        <a href="#seguridad">Seguridad</a>
+        <a href="#preguntas">Preguntas</a>
+      </nav>
+
+      <a class="btn btn--sm header-cta" href="#descargar" data-download>Descargar para Windows</a>
+
+      <details class="mobile-menu">
+        <summary>Menú</summary>
+        <nav aria-label="Secciones">
+          <a href="#que-hace">Qué hace</a>
+          <a href="#vistas">Vistas</a>
+          <a href="#instalar">Cómo se instala</a>
+          <a href="#seguridad">Seguridad</a>
+          <a href="#preguntas">Preguntas</a>
+          <a href="#descargar">Descargar</a>
+        </nav>
+      </details>
+    </div>
+  </header>
+
+  <main id="contenido">
+    <div class="wrap">
+      <section class="hero" id="inicio">
+        <div class="hero-copy">
+          <span class="status-chip"><span class="dot" aria-hidden="true"></span>Hecho por estudiantes de la ULEAM</span>
+          <h1>Tu aula de la ULEAM, <span class="hl">sin abrir Moodle</span>.</h1>
+          <p class="hero-sub">
+            Un panel local que te dice qué hay nuevo, qué se entrega pronto y te deja bajar los
+            materiales de cada materia. Con un Asistente que conoce tus cursos y NotebookLM cuando
+            lo necesitas.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn--lg" href="#descargar" data-download>Descargar para Windows</a>
+            <a class="btn btn--ghost btn--lg" href="#instalar">Ver cómo se instala</a>
+          </div>
+          <p class="hero-meta">
+            Windows 10 u 11 · 64 bits · v<span data-version>1.2.0</span> · No necesitas instalar Python
+          </p>
+          <ul class="trust">
+            <li><span class="tick" aria-hidden="true">✓</span>Datos en tu PC</li>
+            <li><span class="tick" aria-hidden="true">✓</span>Tu API key, cifrada</li>
+            <li><span class="tick" aria-hidden="true">✓</span>Sin telemetría</li>
+          </ul>
+        </div>
+
+        <div class="hero-visual">
+          <figure class="hero-window glass-strong">
+            <div class="window-bar" aria-hidden="true">
+              <span class="traffic"><i></i><i></i><i></i></span>
+              <span>IAula Virtual · Primer inicio</span>
+            </div>
+            <img src="assets/screens/wizard-1.png" width="1440" height="900"
+                 alt="Primera pantalla de IAula Virtual: pide la cuenta de la ULEAM con tres pasos, cuenta, asistente y navegador." />
+          </figure>
+          <p class="hero-caption">Primer inicio: la cuenta del aula y, si quieres, tu proveedor de IA.</p>
+        </div>
+      </section>
+
+      <section class="section" id="que-hace">
+        <div class="section-head">
+          <h2>Lo que hace en cinco gestos</h2>
+          <p>Todo sale de tu propia cuenta del aula. IAula no guarda nada en servidores propios.</p>
+        </div>
+
+        <div class="features">
+          <article class="feature feature--wide glass">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+              Resumen
+            </h3>
+            <p>Lo urgente primero: materiales nuevos desde la última revisión y la próxima entrega con cuenta regresiva.</p>
+            <div class="tags">
+              <span class="tag">Materiales nuevos</span>
+              <span class="tag">Próxima entrega</span>
+              <span class="tag">Última revisión</span>
+            </div>
+          </article>
+
+          <article class="feature feature--wide glass feature--assistant">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.3 9 9 0 0 1-3.8-.8L4 20l1.1-4.2A8.4 8.4 0 0 1 12.5 3a8.4 8.4 0 0 1 8.5 8.5z"/></svg>
+              Asistente
+            </h3>
+            <p>Pregunta por tus cursos, tus fechas o el enunciado de un taller. Lee la descripción y los archivos de cada tarea pendiente para responderte con contexto real.</p>
+            <div class="bubble-demo">
+              <span class="avatar" aria-hidden="true"></span>
+              <span class="say">Puedo leer el enunciado y los archivos de tus tareas pendientes.</span>
+            </div>
+            <div class="tags">
+              <span class="tag">Tu propia API key</span>
+              <span class="tag">OpenAI o compatible</span>
+              <span class="tag">Voz opcional</span>
+            </div>
+          </article>
+
+          <article class="feature glass">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+              Cursos
+            </h3>
+            <p>Cada materia con sus archivos y su atajo para abrir el aula. Descarga todo o solo lo que te interesa.</p>
+            <div class="tags">
+              <span class="tag">PDF</span>
+              <span class="tag">Documentos</span>
+              <span class="tag">Descargar</span>
+            </div>
+          </article>
+
+          <article class="feature glass">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              Tareas
+            </h3>
+            <p>Una línea de tiempo con vencidas, hoy, esta semana y después. Sin abrir cinco pestañas para saber qué toca.</p>
+            <div class="timeline-demo" aria-hidden="true">
+              <span>Hoy · 23:59</span>
+              <span>Esta semana</span>
+              <span>Más adelante</span>
+            </div>
+          </article>
+
+          <article class="feature glass">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 1 2-2h12"/></svg>
+              NotebookLM
+            </h3>
+            <p>Sube los archivos de una materia a tu propio cuaderno, uno por curso, con tu sesión de Google.</p>
+            <div class="tags">
+              <span class="tag">Opcional</span>
+              <span class="tag">Un cuaderno por curso</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="vistas">
+        <div class="section-head">
+          <h2>Así se ve por dentro</h2>
+          <p>Capturas reales de la app, sin datos de nadie.</p>
+        </div>
+        <div class="screens-grid">
+          <figure class="shot glass">
+            <img src="assets/screens/settings.png" width="1440" height="900" loading="lazy"
+                 alt="Pantalla de Ajustes de IAula Virtual: proveedor de IA, cuenta del aula, navegador preferido, diagnóstico y privacidad." />
+            <figcaption>Ajustes: tu cuenta, tu proveedor de IA y el navegador, en un solo sitio.</figcaption>
+          </figure>
+          <figure class="shot glass">
+            <img src="assets/screens/diagnostics.png" width="1440" height="900" loading="lazy"
+                 alt="Pantalla de Diagnóstico de IAula Virtual con comprobaciones de entorno, paquetes, navegador, sesión y espacio en disco." />
+            <figcaption>Diagnóstico: qué falta, por qué y un botón para repararlo.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="instalar">
+        <div class="section-head">
+          <h2>Instalarlo lleva tres pasos</h2>
+          <p>No hay que configurar archivos ni abrir una terminal.</p>
+        </div>
+
+        <ol class="steps">
+          <li class="step glass">
+            <span class="step-num" aria-hidden="true">1</span>
+            <div>
+              <h3>Descarga y ejecuta el instalador</h3>
+              <p>Doble clic en el archivo que baja desde el botón de esta página. El instalador coloca la app y verifica lo que necesita.</p>
+              <div class="step-extra">
+                <a class="btn btn--sm" href="#descargar" data-download>Descargar IAula Virtual</a>
+              </div>
+            </div>
+          </li>
+          <li class="step glass">
+            <span class="step-num" aria-hidden="true">2</span>
+            <div>
+              <h3>Entra con tu cuenta de la ULEAM</h3>
+              <p>Escribe tu correo y tu contraseña en la primera pantalla. Se abre una ventana de Microsoft una sola vez para validar la sesión.</p>
+            </div>
+          </li>
+          <li class="step glass">
+            <span class="step-num" aria-hidden="true">3</span>
+            <div>
+              <h3>Conecta tu Asistente, si quieres</h3>
+              <p>Pega tu API key en Ajustes. Funciona con OpenAI y con cualquier proveedor compatible. Si no tienes una ahora, el resto de la app funciona igual.</p>
+              <div class="step-extra">
+                <a class="btn btn--ghost btn--sm" href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">Cómo obtener una clave</a>
+              </div>
+            </div>
+          </li>
+        </ol>
+
+        <div class="note">
+          <b>Si Windows avisa al abrir el instalador:</b> es el aviso normal de SmartScreen para programas nuevos
+          sin certificado de firma. Pulsa <b>Más información</b> y luego <b>Ejecutar de todas formas</b>.
+          <details>
+            <summary>Prefiero comprobarlo antes</summary>
+            <p>
+              Cada release publica <code>SHA256SUMS.txt</code>. Compara el hash del archivo que descargaste
+              con el de esa lista y revisa el código en el repositorio. Si no coincide, no lo ejecutes.
+            </p>
+          </details>
+        </div>
+      </section>
+
+      <section class="section" id="requisitos">
+        <div class="section-head">
+          <h2>Qué necesitas</h2>
+        </div>
+        <div class="split">
+          <div class="panel-block glass">
+            <h3>En tu equipo</h3>
+            <ul class="req-list">
+              <li><span class="tick" aria-hidden="true">✓</span>Windows 10 u 11, 64 bits.</li>
+              <li><span class="tick" aria-hidden="true">✓</span>Unos 300 MB libres, más lo que ocupen tus descargas.</li>
+              <li><span class="tick" aria-hidden="true">✓</span>Tu cuenta del aula virtual de la ULEAM.</li>
+              <li><span class="tick" aria-hidden="true">✓</span>Brave, Chrome o Edge recomendado. Si no tienes ninguno, IAula descarga su navegador interno.</li>
+              <li><span class="tick" aria-hidden="true">✓</span>Conexión a Internet para el aula y, si lo usas, el Asistente.</li>
+            </ul>
+          </div>
+
+          <div class="panel-block glass">
+            <h3>O con Docker, sin instalar nada</h3>
+            <p class="plain-note">
+              Si prefieres no instalar la app, el panel se abre en tu navegador desde un contenedor.
+              Necesitas Docker Desktop o Docker Engine.
+            </p>
+            <div class="code-block">
+              <pre id="docker-cmd"><code>git clone https://github.com/VxGM/IAula-Virtual-Uleam.git
+cd IAula-Virtual-Uleam
+docker compose -f packaging/docker/docker-compose.yml up -d</code></pre>
+              <button class="copy-btn" type="button" data-copy="#docker-cmd">Copiar</button>
+            </div>
+            <p class="hero-meta">Luego abre <b>http://localhost:7800</b> en tu navegador.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="seguridad">
+        <div class="section-head">
+          <h2>Seguridad sin letra pequeña</h2>
+          <p>IAula no es un servicio: es un programa que corre en tu equipo con tu cuenta.</p>
+        </div>
+
+        <div class="security-band glass-strong">
+          <div class="security-grid">
+            <div class="security-item">
+              <span class="shield" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+              </span>
+              <div>
+                <h3>Sin claves incluidas</h3>
+                <p>El instalador no lleva ninguna API key. Cada persona pone la suya y se guarda cifrada con DPAPI, ligada a su usuario de Windows.</p>
+              </div>
+            </div>
+            <div class="security-item">
+              <span class="shield" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <div>
+                <h3>Todo se queda en tu PC</h3>
+                <p>No hay servidores de IAula, ni cuentas centrales, ni telemetría. Las conexiones salen al aula, a tu proveedor de IA y a NotebookLM si lo usas.</p>
+              </div>
+            </div>
+            <div class="security-item">
+              <span class="shield" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 3.5 2.6 14.5 0 18"/><path d="M12 3c-2.6 3.5-2.6 14.5 0 18"/></svg>
+              </span>
+              <div>
+                <h3>Panel solo local</h3>
+                <p>La interfaz escucha únicamente en 127.0.0.1, con CSP, validación de origen y sin exponer secretos por HTTP.</p>
+              </div>
+            </div>
+            <div class="security-item">
+              <span class="shield" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+              </span>
+              <div>
+                <h3>Código abierto y hashes</h3>
+                <p>Licencia MIT. Cada release incluye <code>SHA256SUMS.txt</code> para que compruebes el archivo antes de ejecutarlo.</p>
+              </div>
+            </div>
+          </div>
+          <div class="security-links">
+            <a href="https://github.com/VxGM/IAula-Virtual-Uleam/blob/main/SECURITY.md" target="_blank" rel="noopener">Leer la política de seguridad</a>
+            <a href="https://github.com/VxGM/IAula-Virtual-Uleam/releases/latest/download/SHA256SUMS.txt" target="_blank" rel="noopener">Ver hashes de la última versión</a>
+          </div>
+          <p class="hero-meta">Esta página no usa cookies, ni analítica, ni fuentes externas.</p>
+        </div>
+      </section>
+
+      <section class="section" id="preguntas">
+        <div class="section-head">
+          <h2>Preguntas frecuentes</h2>
+        </div>
+
+        <div class="faq">
+          <details>
+            <summary>¿Necesito saber usar GitHub?</summary>
+            <p class="answer">No. El botón de descarga te lleva directo al instalador. GitHub solo aparece si quieres ver el código, descargar una versión antigua o reportar un problema.</p>
+          </details>
+          <details>
+            <summary>¿Es gratis?</summary>
+            <p class="answer">Sí, con licencia MIT. El Asistente consume tu propia clave del proveedor de IA que elijas; el resto de funciones no cuesta nada.</p>
+          </details>
+          <details>
+            <summary>¿Cuánto cuesta la parte de IA?</summary>
+            <p class="answer">Depende de tu proveedor y de cuánto lo uses. Puedes usar una clave gratuita, un proveedor compatible o un modelo local como Ollama. IAula solo envía la conversación y el contexto de las tareas que preguntas.</p>
+          </details>
+          <details>
+            <summary>¿Dónde se guardan mis datos?</summary>
+            <p class="answer">En <code>%LOCALAPPDATA%\IAulaVirtual</code>. La contraseña del aula y la API key se cifran con DPAPI. Las descargas se quedan en tu equipo y el desinstalador borra todo.</p>
+          </details>
+          <details>
+            <summary>¿Por qué Windows dice que no es seguro?</summary>
+            <p class="answer">Porque el instalador todavía no tiene certificado de firma de código. Es habitual en proyectos nuevos. Puedes comprobar el hash SHA256 y revisar el código fuente antes de ejecutarlo.</p>
+          </details>
+          <details>
+            <summary>¿Funciona con cualquier materia o paralelo?</summary>
+            <p class="answer">IAula lee lo que tengas matriculado en tu cuenta del aula. No hay listas fijas de cursos ni de carreras.</p>
+          </details>
+          <details>
+            <summary>¿Qué necesito para NotebookLM?</summary>
+            <p class="answer">Una sesión de Google en el navegador que elijas. IAula sube los archivos a tus propios cuadernos, uno por materia, y nunca a una cuenta intermedia.</p>
+          </details>
+          <details>
+            <summary>¿Se puede usar en Mac o Linux?</summary>
+            <p class="answer">La app de escritorio es para Windows. La versión Docker abre el mismo panel en el navegador y funciona en cualquier sistema con Docker.</p>
+          </details>
+          <details>
+            <summary>¿La ULEAM lo aprueba?</summary>
+            <p class="answer">Es un proyecto de estudiantes. No es oficial ni está afiliado a la ULEAM. Úsalo con tu propia cuenta y respeta las normas de tu institución.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="section" id="descargar">
+        <div class="final-cta glass-strong">
+          <h2>Diez segundos para saber qué te falta</h2>
+          <p>Instálalo, entra con tu cuenta y deja que el panel te muestre el aula como debía verse.</p>
+          <div class="hero-actions">
+            <a class="btn btn--lg" href="https://github.com/VxGM/IAula-Virtual-Uleam/releases/latest" data-download>
+              Descargar para Windows
+            </a>
+            <a class="btn btn--ghost btn--lg" href="https://github.com/VxGM/IAula-Virtual-Uleam" target="_blank" rel="noopener">
+              Ver el código
+            </a>
+          </div>
+          <p class="hero-meta">
+            Última versión: <b data-version>1.2.0</b> · <span data-size>Instalador para Windows</span>
+          </p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-inner">
+        <div>
+          <div class="footer-brand">
+            <svg width="30" height="30" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+              <circle cx="17" cy="21" r="12" fill="rgba(255,255,255,0.28)" stroke="#fff" stroke-width="1.6" />
+              <circle cx="12.5" cy="16.5" r="3.4" fill="#fff" opacity="0.9" />
+              <circle cx="29" cy="13" r="6" fill="rgba(255,255,255,0.22)" stroke="#fff" stroke-width="1.3" />
+              <circle cx="27" cy="11" r="1.6" fill="#fff" opacity="0.9" />
+              <circle cx="30" cy="29" r="4" fill="rgba(255,255,255,0.22)" stroke="#fff" stroke-width="1.2" />
+            </svg>
+            IAula <span class="accent">Virtual</span>
+          </div>
+          <p class="footer-tagline">
+            Monitor del aula virtual de la ULEAM. Frutiger Aero, vidrio y cielo, para que revisar tus
+            cursos no se sienta como una tarea más.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Producto</h4>
+          <a href="#que-hace">Qué hace</a>
+          <a href="#instalar">Cómo se instala</a>
+          <a href="#seguridad">Seguridad</a>
+          <a href="#preguntas">Preguntas</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Proyecto</h4>
+          <a href="https://github.com/VxGM/IAula-Virtual-Uleam" target="_blank" rel="noopener">Repositorio</a>
+          <a href="https://github.com/VxGM/IAula-Virtual-Uleam/releases" target="_blank" rel="noopener">Versiones</a>
+          <a href="https://github.com/VxGM/IAula-Virtual-Uleam/issues" target="_blank" rel="noopener">Reportar un problema</a>
+          <a href="https://github.com/VxGM/IAula-Virtual-Uleam/blob/main/SECURITY.md" target="_blank" rel="noopener">Seguridad</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© <span id="year">2026</span> VxGM · Licencia MIT · Hecho en Manta, Ecuador</span>
+        <span>No afiliado a la ULEAM · Esta página no usa cookies</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/landing.js" defer></script>
+</body>
+</html>

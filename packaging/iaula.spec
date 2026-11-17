@@ -19,6 +19,7 @@ hiddenimports = collect_submodules("webview") + [
     "pymupdf",
     "playwright",
     "playwright.sync_api",
+    "websocket",
     "win32ctypes",
 ]
 

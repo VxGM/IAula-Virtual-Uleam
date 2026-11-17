@@ -1,8 +1,15 @@
 # Copiar a config.local.toml y completar. No se sube a git.
+#
+# En la app de escritorio no hace falta editar esto: la pantalla de Ajustes
+# guarda la contraseña y la API key cifradas con DPAPI en data/secrets.bin.
+# Estas claves solo se usan en desarrollo o al migrar una instalación vieja.
 
 [portal]
 username = ""
 password = ""
 
 [chat]
+# Cualquier endpoint compatible con OpenAI (OpenAI, Groq, OpenRouter, …).
+base_url = "https://api.openai.com/v1"
+model = "gpt-5.4-mini"
 api_key = ""

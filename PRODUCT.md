@@ -6,17 +6,20 @@ product
 
 ## Users
 
-Un solo usuario: el estudiante dueño del proyecto (ULEAM, Manta), en su PC con Windows,
-en sesiones cortas entre clases o al final del día. Contexto: quiere saber en segundos
-qué hay nuevo en su aula virtual y qué se entrega pronto, y lanzar acciones (revisar,
-descargar, sincronizar con NotebookLM) sin abrir la terminal ni recordar comandos.
+Estudiantes de la ULEAM, sobre todo compañeros sin perfil técnico, en su PC con Windows,
+en sesiones cortas entre clases o al final del día. El autor es el primero, pero el
+producto se distribuye como instalador público: cada persona usa su propia cuenta del
+aula y su propia API key. Contexto: quiere saber en segundos qué hay nuevo en su aula
+virtual y qué se entrega pronto, y lanzar acciones (revisar, descargar, sincronizar con
+NotebookLM) sin abrir la terminal ni recordar comandos.
 
 ## Product Purpose
 
 Panel local que resume la actividad del aula virtual (Moodle ULEAM) y ejecuta el toolkit
 `iaula` con progreso visible: revisar novedades, descargar materiales, sincronizar con
-NotebookLM y vigilar entregas. Éxito = saber en menos de diez segundos qué requiere
-atención y actuar con un clic.
+NotebookLM y vigilar entregas. Instalable por terceros, sin claves ni servicios del autor.
+Éxito = saber en menos de diez segundos qué requiere atención y actuar con un clic, sin
+que la configuración inicial (cuenta, proveedor de IA, dependencias) sea un obstáculo.
 
 ## Brand Personality
 

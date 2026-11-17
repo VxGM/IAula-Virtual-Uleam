@@ -6,7 +6,7 @@ import sys
 import time
 
 from iaula import __version__, actions, notebooklm as nlm
-from iaula.config import load_config
+from iaula.config import load_config, migrate_local_secrets
 from iaula.portal.auth import login
 from iaula.portal.client import Portal
 from iaula.portal.courses import find_course, list_courses
@@ -65,6 +65,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     a = sub.add_parser("app", help="App de escritorio (ventana propia)")
     a.add_argument("--port", type=int, default=7800)
+
+    doc = sub.add_parser("doctor", help="Comprueba dependencias y entorno")
+    doc.add_argument("--json", action="store_true")
+    doc.add_argument("--no-network", action="store_true", help="Omite la prueba de conexión")
+    doc.add_argument("--repair", action="store_true", help="Intenta reparar lo reparable")
 
     s = sub.add_parser("mcp", help="Servidor MCP para agentes IA (stdio)")
     s.add_argument("--sse", action="store_true", help="Servir por HTTP (SSE)")
@@ -134,6 +139,29 @@ def cmd_nlm_sync(cfg, args) -> int:
     return 0
 
 
+def cmd_doctor(cfg, args) -> int:
+    from iaula import doctor
+
+    result = doctor.check_all(cfg, network=not args.no_network)
+    if args.repair:
+        ids = [i["id"] for i in result["items"]
+               if i["fixable"] and i["status"] in ("warn", "error")]
+        if ids:
+            doctor.repair(cfg, ids, log=print)
+            result = doctor.check_all(cfg, network=not args.no_network)
+    if args.json:
+        print(_dump(result))
+    else:
+        marks = {"ok": "OK  ", "warn": "AVISO", "error": "ERROR", "skip": "—   "}
+        for item in result["items"]:
+            print(f"[{marks.get(item['status'], item['status'])}] {item['label']}: {item['detail']}")
+            if item["hint"] and item["status"] in ("warn", "error"):
+                print(f"          → {item['hint']}")
+        s = result["summary"]
+        print(f"\n{s['ok']} correctos · {s['warn']} avisos · {s['error']} errores · {s['skip']} omitidos")
+    return 1 if result["fatal"] else 0
+
+
 def cmd_gui(cfg, args) -> int:
     from iaula import gui
     return gui.serve(cfg, port=args.port, open_browser=not args.no_open)
@@ -181,6 +209,8 @@ def run(cfg, args) -> int:
         return cmd_gui(cfg, args)
     elif args.cmd == "app":
         return cmd_app(cfg, args)
+    elif args.cmd == "doctor":
+        return cmd_doctor(cfg, args)
     elif args.cmd == "mcp":
         return cmd_mcp(cfg, args)
     return 0
@@ -190,8 +220,11 @@ def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
     args = build_parser().parse_args()
+    cfg = load_config()
     try:
-        code = run(load_config(), args)
+        if migrate_local_secrets(cfg.root):
+            cfg = load_config()
+        code = run(cfg, args)
     except (LookupError, RuntimeError, nlm.NotebookLMError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         code = 1

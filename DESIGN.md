@@ -34,7 +34,11 @@ Tokens en OKLCH donde aporta; hex base heredados de los proyectos del usuario.
 ## Layout
 
 - Header pill flotante (sticky) + contenedor `max-width 1180px`.
-- Vistas por pestañas (hash router): Resumen · Cursos · Tareas · NotebookLM.
+- Vistas por pestañas (hash router): Resumen · Cursos · Tareas · NotebookLM · Asistente ·
+  Ajustes · Diagnóstico.
+- Primer arranque: wizard de 3 pasos (cuenta ULEAM, Asistente opcional, navegador) en una
+  sola card con stepper; el header y la barra de tareas se ocultan (`setup-mode`).
+- Diagnóstico bloqueante solo si un ítem es fatal; si no, franja descartable sobre el contenido.
 - Rejilla principal: 2 columnas en desktop (novedades | entregas), 1 en móvil.
 - 5 breakpoints (1280 / 1024 / 768 / 640 / 380) siguiendo los proyectos previos.
 
@@ -75,3 +79,13 @@ con rebote. Eases del sistema: `bounce (0.34,1.56,0.64,1)`, `smooth (0.22,0.61,0
 - Vacío: mensaje + botón que resuelve ("Correr primera revisión").
 - Error: toast rojo glass + estado en línea del panel afectado.
 - Acción en curso: botón en loading + ventana Aero con log en vivo; al terminar, toast y refresco de datos.
+
+## Landing pública (`landing/`)
+
+Misma escena y tokens, sin build ni fuentes externas. Cielo fijo del banner, vidrio,
+peces, burbujas y orbes; el texto siempre sobre vidrio o sobre una franja clara para
+mantener AA. Secciones: hero con captura real del primer inicio, cinco gestos del
+producto, capturas de Ajustes y Diagnóstico, instalación en tres pasos, requisitos y
+Docker, seguridad, FAQ y CTA final. El botón de descarga resuelve la última release de
+GitHub en tiempo real y cae a la página de releases si la API falla. CSP estricta sin
+excepciones (`script-src 'self'`, `style-src 'self'`, `connect-src` solo a `api.github.com`).

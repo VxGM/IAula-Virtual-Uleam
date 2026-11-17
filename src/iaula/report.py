@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import subprocess
 import time
 from pathlib import Path
 
@@ -9,6 +8,7 @@ from iaula.config import Config
 from iaula.portal.courses import Course, short_name
 from iaula.portal.materials import Material
 from iaula.portal.tasks import Task
+from iaula.proc import run
 
 
 def fmt_due(ts: int) -> str:
@@ -94,7 +94,7 @@ def notify(title: str, message: str) -> None:
         "[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('IAula').Show("
         "[Windows.UI.Notifications.ToastNotification]::new($t))"
     )
-    subprocess.run(["powershell", "-NoProfile", "-Command", ps], capture_output=True, timeout=30)
+    run(["powershell", "-NoProfile", "-Command", ps], capture_output=True, timeout=30)
 
 
 def _esc(s: str) -> str:

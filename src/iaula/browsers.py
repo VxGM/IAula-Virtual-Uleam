@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import os
 import re
-import shutil
-import subprocess
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
+
+from iaula.proc import run
 
 BROWSERS = [
     ("brave", "Brave", r"BraveSoftware\Brave-Browser\Application\brave.exe"),
@@ -24,7 +25,7 @@ class Browser:
 
 def _reg_query(path: str, name: str) -> str | None:
     try:
-        r = subprocess.run(
+        r = run(
             ["reg", "query", path, "/ve"],
             capture_output=True, text=True, encoding="utf-8", errors="replace",
             timeout=5,
@@ -42,11 +43,12 @@ def _reg_query(path: str, name: str) -> str | None:
 def _find_in_registry() -> list[Browser]:
     out = []
     for key, name, sub in BROWSERS:
+        exe = Path(sub).name
         for hive in (
             r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths",
             r"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths",
         ):
-            val = _reg_query(f"{hive}\\{sub.split(os.sep)[0]}", sub)
+            val = _reg_query(f"{hive}\\{exe}", exe)
             if val:
                 p = Path(val)
                 if p.exists():
@@ -55,14 +57,13 @@ def _find_in_registry() -> list[Browser]:
     return out
 
 
-def _find_by_path() -> list[Browser]:
+def _find_by_path(seen: set[str]) -> list[Browser]:
     out = []
     program_files = [
         Path(os.environ.get("ProgramFiles", r"C:\Program Files")),
         Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")),
         Path(os.environ.get("LOCALAPPDATA", str(Path.home()))),
     ]
-    seen = {b.key for b in _find_in_registry()}
     for key, name, sub in BROWSERS:
         if key in seen:
             continue
@@ -74,10 +75,13 @@ def _find_by_path() -> list[Browser]:
     return out
 
 
+@lru_cache(maxsize=1)
 def detect_browsers() -> list[Browser]:
     """Devuelve los navegadores instalados, sin duplicados, en orden conocido."""
+    found = _find_in_registry()
+    found += _find_by_path({b.key for b in found})
     by_key: dict[str, Browser] = {}
-    for b in _find_in_registry() + _find_by_path():
+    for b in found:
         by_key.setdefault(b.key, b)
     return [by_key[k] for k in [b[0] for b in BROWSERS] if k in by_key]
 
@@ -93,6 +97,20 @@ def default_browser() -> Browser | None:
             if b.key == key:
                 return b
     return browsers[0]
+
+
+PLAYWRIGHT_KEYS = ("brave", "chrome", "msedge")
+
+
+def playwright_browser(key: str = "") -> Browser | None:
+    """Navegador instalado que Playwright puede lanzar (Chromium: Brave/Chrome/Edge)."""
+    browsers = {b.key: b for b in detect_browsers() if b.key in PLAYWRIGHT_KEYS}
+    if key and key in browsers:
+        return browsers[key]
+    for k in PLAYWRIGHT_KEYS:
+        if k in browsers:
+            return browsers[k]
+    return None
 
 
 def browser_prompt(custom_message: str = "Elegí tu navegador para NotebookLM:") -> Browser | None:

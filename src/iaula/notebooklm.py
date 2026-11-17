@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 import shutil
-import subprocess
 from pathlib import Path
+
+from iaula.proc import run
 
 UPLOADABLE = {".pdf", ".docx", ".doc", ".txt", ".md", ".pptx", ".epub", ".csv"}
 
@@ -16,7 +17,7 @@ def _run(*args: str) -> dict | str:
     exe = shutil.which("notebooklm")
     if not exe:
         raise NotebookLMError("CLI `notebooklm` no instalado: pip install \"notebooklm-py[browser]\"")
-    p = subprocess.run([exe, *args], capture_output=True, text=True, encoding="utf-8", timeout=900)
+    p = run([exe, *args], capture_output=True, text=True, encoding="utf-8", timeout=900)
     if p.returncode != 0:
         err = (p.stderr or p.stdout).strip()
         raise NotebookLMError(err[-400:] if len(err) > 400 else err)

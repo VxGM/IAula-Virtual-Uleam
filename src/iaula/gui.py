@@ -1,21 +1,32 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import textwrap
 import threading
 import time
-import tomllib
+import traceback
 import uuid
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit
 
 import requests
 
-from iaula import actions, notebooklm as nlm
-from iaula.config import Config, load_config
+from iaula import actions, doctor, notebooklm as nlm, secrets
+from iaula import __version__
+from iaula.config import (
+    DEFAULT_CHAT_MODEL,
+    DEFAULT_CHAT_URL,
+    SECRET_CHAT_KEY,
+    SECRET_PORTAL_PASSWORD,
+    Config,
+    load_config,
+    migrate_local_secrets,
+    save_local,
+)
 from iaula.downloader import safe
 from iaula.extract import extract_text
 from iaula.portal.client import Portal
@@ -23,6 +34,19 @@ from iaula.portal.tasks import list_tasks, task_context
 from iaula.state import State
 
 WEB_DIR = (Path(__file__).resolve().parent / "web").resolve()
+MAX_JSON_BYTES = 2 * 1024 * 1024
+
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Permissions-Policy": "microphone=(self), camera=(), geolocation=()",
+    "Content-Security-Policy": (
+        "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
+        "script-src 'self'; connect-src 'self'; media-src 'self' blob:; font-src 'self'; "
+        "frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+    ),
+}
 
 MIME = {
     ".html": "text/html; charset=utf-8",
@@ -33,6 +57,12 @@ MIME = {
     ".ico": "image/x-icon",
     ".json": "application/json; charset=utf-8",
 }
+
+
+class LocalServer(ThreadingHTTPServer):
+    # En Windows SO_REUSEADDR permite que dos instancias escuchen el mismo puerto.
+    allow_reuse_address = sys.platform != "win32"
+    daemon_threads = True
 
 
 class Jobs:
@@ -80,11 +110,108 @@ def _downloaded_count(cfg: Config, short: str) -> int:
     return len([f for f in folder.glob("*") if f.is_file()]) if folder.exists() else 0
 
 
+AUDIO_TYPES = {
+    "audio/webm": "webm",
+    "audio/ogg": "ogg",
+    "audio/mp4": "mp4",
+    "audio/m4a": "m4a",
+    "audio/mpeg": "mp3",
+    "audio/wav": "wav",
+    "audio/x-wav": "wav",
+}
+
+MAX_AUDIO_BYTES = 25 * 1024 * 1024
+MAX_SPEECH_CHARS = 4000
+
+
+def speech_text(text: str, limit: int = MAX_SPEECH_CHARS) -> str:
+    clean = text.replace("**", "").replace("__", "").replace("`", "")
+    clean = clean.replace("*", "").replace("#", "")
+    clean = " ".join(clean.split())
+    if len(clean) > limit:
+        clean = clean[:limit].rsplit(" ", 1)[0] or clean[:limit]
+    return clean
+
+
 _AUTH_CACHE: dict = {"at": 0.0, "ok": False}
 _AUTH_TTL = 300.0
 
 _TASK_CTX_CACHE: dict = {}
 _TASK_CTX_TTL = 900.0
+
+_DIAG_CACHE: dict = {"at": 0.0, "result": None}
+_DIAG_TTL = 60.0
+
+_LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
+
+
+def _env_locked() -> bool:
+    return bool(os.environ.get("OPENAI_API_KEY"))
+
+
+def _clean_base_url(raw: str) -> str:
+    value = (raw or "").strip().rstrip("/")
+    if not value:
+        return DEFAULT_CHAT_URL
+    parsed = urlsplit(value)
+    if parsed.scheme not in ("https", "http"):
+        raise ValueError("La URL debe empezar con https:// (o http:// en localhost).")
+    if parsed.username or parsed.password:
+        raise ValueError("La URL no puede incluir credenciales.")
+    if not parsed.hostname:
+        raise ValueError("La URL del proveedor no es válida.")
+    if parsed.scheme == "http" and parsed.hostname not in _LOCAL_HOSTS:
+        raise ValueError("Usa https:// salvo para un modelo local en 127.0.0.1.")
+    return value
+
+
+def _provider_error(resp: requests.Response) -> str:
+    try:
+        body = resp.json()
+    except ValueError:
+        body = None
+    if isinstance(body, dict):
+        message = (body.get("error") or {}).get("message") if isinstance(body.get("error"), dict) else ""
+        if message:
+            return str(message)
+    return f"El proveedor respondió HTTP {resp.status_code}"
+
+
+def _probe_provider(base_url: str, model: str, api_key: str) -> dict:
+    started = time.time()
+    headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+    try:
+        resp = requests.get(f"{base_url}/models", headers=headers, timeout=15)
+    except requests.RequestException as exc:
+        raise RuntimeError(f"No pude conectar con {base_url}: {exc.__class__.__name__}") from exc
+    if resp.status_code == 200:
+        return {"method": "models", "latency_ms": int((time.time() - started) * 1000)}
+    if resp.status_code not in (404, 405):
+        raise RuntimeError(_provider_error(resp))
+
+    payloads = [
+        {"model": model, "messages": [{"role": "user", "content": "ping"}], "max_tokens": 1},
+        {"model": model, "messages": [{"role": "user", "content": "ping"}],
+         "max_completion_tokens": 1},
+        {"model": model, "messages": [{"role": "user", "content": "ping"}]},
+    ]
+    error = ""
+    for payload in payloads:
+        try:
+            resp = requests.post(f"{base_url}/chat/completions", headers=headers,
+                                 json=payload, timeout=45)
+        except requests.RequestException as exc:
+            raise RuntimeError(f"No pude conectar con {base_url}: {exc.__class__.__name__}") from exc
+        if resp.status_code == 200:
+            return {"method": "chat", "latency_ms": int((time.time() - started) * 1000)}
+        error = _provider_error(resp)
+        if "max_tokens" not in error and "max_completion_tokens" not in error:
+            break
+    raise RuntimeError(error or "El proveedor rechazó la prueba de conexión")
+
+
+def _mask(value: str) -> str:
+    return f"···{value[-4:]}" if len(value) >= 4 else ("···" if value else "")
 
 
 def nlm_auth_cached(force: bool = False) -> bool:
@@ -105,12 +232,66 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args) -> None:
         pass
 
+    def _security_headers(self) -> None:
+        for name, value in SECURITY_HEADERS.items():
+            self.send_header(name, value)
+
+    def _host_ok(self) -> bool:
+        host = (self.headers.get("Host") or "").strip().lower()
+        if not host:
+            return True
+        port = self.server.server_address[1]
+        allowed = {
+            f"127.0.0.1:{port}", f"localhost:{port}", f"[::1]:{port}",
+            "127.0.0.1", "localhost", "[::1]",
+        }
+        return host in allowed
+
+    def _origin_ok(self) -> bool:
+        port = self.server.server_address[1]
+        allowed = {
+            f"http://127.0.0.1:{port}",
+            f"http://localhost:{port}",
+            f"http://[::1]:{port}",
+        }
+        origin = self.headers.get("Origin")
+        if origin and origin.lower() not in allowed:
+            return False
+        site = self.headers.get("Sec-Fetch-Site")
+        if site and site not in ("same-origin", "none"):
+            return False
+        return True
+
+    def _guard(self, post: bool = False) -> bool:
+        if not self._host_ok():
+            self._error("host no permitido", 403)
+            return False
+        if post and not self._origin_ok():
+            self._error("origen no permitido", 403)
+            return False
+        return True
+
+    def _internal_error(self, exc: Exception) -> None:
+        try:
+            logdir = self.cfg.root / "data" / "logs"
+            logdir.mkdir(parents=True, exist_ok=True)
+            stamp = time.strftime("%Y-%m-%d %H:%M:%S")
+            with (logdir / "error.log").open("a", encoding="utf-8") as fh:
+                fh.write(f"[{stamp}] {self.command} {self.path}\n{traceback.format_exc()}\n")
+        except OSError:
+            pass
+        if getattr(sys, "frozen", False):
+            self._error("Error interno. Revisa Ajustes → Diagnóstico.", 500)
+        else:
+            self._error(str(exc), 500)
+
     def _json(self, data, status: int = 200) -> None:
         body = json.dumps(data, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self._security_headers()
         self.end_headers()
         self.wfile.write(body)
 
@@ -132,19 +313,19 @@ class Handler(BaseHTTPRequestHandler):
         if not username or not password:
             self._error("Usuario y contraseña son obligatorios", 400)
             return
-        openai_key = str(payload.get("openai_key") or "").strip()
         root = self.cfg.root
-        lines = [
-            "[portal]",
-            f"username = {json.dumps(username, ensure_ascii=False)}",
-            f"password = {json.dumps(password, ensure_ascii=False)}",
-            "",
-            "[chat]",
-            f"api_key = {json.dumps(openai_key)}",
-            "",
-        ]
-        root.mkdir(parents=True, exist_ok=True)
-        (root / "config.local.toml").write_text("\n".join(lines), encoding="utf-8")
+        save_local(root, "portal", {"username": username})
+        secrets.set_item(root, SECRET_PORTAL_PASSWORD, password)
+        openai_key = str(payload.get("openai_key") or "").strip()
+        if openai_key:
+            secrets.set_item(root, SECRET_CHAT_KEY, openai_key)
+        base_url = str(payload.get("base_url") or "").strip()
+        model = str(payload.get("model") or "").strip()
+        if base_url or model:
+            save_local(root, "chat", {
+                "base_url": _clean_base_url(base_url),
+                "model": model or DEFAULT_CHAT_MODEL,
+            })
         type(self).cfg = load_config()
         self._json({"ok": True})
 
@@ -153,23 +334,107 @@ class Handler(BaseHTTPRequestHandler):
         if not browser:
             self._error("falta browser", 400)
             return
-        local = self.cfg.root / "config.local.toml"
-        data = {}
-        if local.exists():
-            try:
-                data = tomllib.loads(local.read_text(encoding="utf-8"))
-            except Exception:
-                data = {}
-        data.setdefault("notebooklm", {})["browser"] = browser
-        local.write_text(
-            "\n".join(
-                f"[{k}]\n" + "\n".join(f"{kk} = {json.dumps(vv)}" for kk, vv in v.items()) + "\n"
-                for k, v in data.items()
-            ),
-            encoding="utf-8",
-        )
+        save_local(self.cfg.root, "browser", {"default": browser})
         type(self).cfg = load_config()
-        self._json({"ok": True})
+        self._json({"ok": True, "browser": type(self).cfg.browser})
+
+    def _chat_source(self) -> str:
+        if _env_locked():
+            return "env"
+        if secrets.get_item(self.cfg.root, SECRET_CHAT_KEY):
+            return "vault"
+        return "local" if self.cfg.chat.api_key else "none"
+
+    def _settings_chat_get(self) -> None:
+        cfg = self.cfg
+        source = self._chat_source()
+        self._json({
+            "configured": bool(cfg.chat.api_key),
+            "base_url": cfg.chat.base_url,
+            "model": cfg.chat.model,
+            "key_hint": "gestionada por el entorno" if source == "env" else _mask(cfg.chat.api_key),
+            "source": source,
+            "locked_by_env": source == "env",
+            "defaults": {"base_url": DEFAULT_CHAT_URL, "model": DEFAULT_CHAT_MODEL},
+            "voice": {"stt": cfg.chat.stt_model, "tts": cfg.chat.tts_model,
+                      "name": cfg.chat.tts_voice},
+        })
+
+    def _settings_chat_save(self, payload: dict) -> None:
+        cfg = self.cfg
+        root = cfg.root
+        try:
+            base_url = _clean_base_url(str(payload.get("base_url") or cfg.chat.base_url))
+        except ValueError as exc:
+            self._error(str(exc), 400)
+            return
+        model = str(payload.get("model") or cfg.chat.model).strip() or DEFAULT_CHAT_MODEL
+        provided = str(payload.get("api_key") or "").strip()
+        if _env_locked():
+            api_key = cfg.chat.api_key
+        else:
+            api_key = provided or cfg.chat.api_key
+        if not api_key:
+            self._error("Falta la API key. Pega una clave válida de tu proveedor.", 400)
+            return
+        try:
+            probe = _probe_provider(base_url, model, api_key)
+        except RuntimeError as exc:
+            self._error(str(exc), 400)
+            return
+        save_local(root, "chat", {"base_url": base_url, "model": model})
+        if provided and not _env_locked():
+            secrets.set_item(root, SECRET_CHAT_KEY, provided)
+        type(self).cfg = load_config()
+        self._json({"ok": True, "configured": True, "model": model,
+                    "base_url": base_url, **probe})
+
+    def _settings_chat_clear(self) -> None:
+        secrets.delete_item(self.cfg.root, SECRET_CHAT_KEY)
+        type(self).cfg = load_config()
+        self._json({"ok": True, "configured": bool(type(self).cfg.chat.api_key)})
+
+    def _settings_portal_get(self) -> None:
+        cfg = self.cfg
+        self._json({
+            "username": cfg.portal.username,
+            "has_password": bool(cfg.portal.password),
+            "base_url": cfg.portal.base_url,
+        })
+
+    def _settings_portal(self, payload: dict) -> None:
+        username = str(payload.get("username") or "").strip()
+        password = str(payload.get("password") or "")
+        if not username:
+            self._error("El usuario del aula es obligatorio", 400)
+            return
+        root = self.cfg.root
+        save_local(root, "portal", {"username": username})
+        if password:
+            secrets.set_item(root, SECRET_PORTAL_PASSWORD, password)
+        type(self).cfg = load_config()
+        self._json({"ok": True, "username": username,
+                    "has_password": bool(self.cfg.portal.password)})
+
+    def _diagnostics(self, force: bool) -> None:
+        now = time.time()
+        cached = _DIAG_CACHE["result"]
+        if force or cached is None or now - _DIAG_CACHE["at"] > _DIAG_TTL:
+            _DIAG_CACHE["result"] = doctor.check_all(self.cfg, network=True)
+            _DIAG_CACHE["at"] = now
+        self._json(_DIAG_CACHE["result"])
+
+    def _diagnostics_repair(self, payload: dict) -> None:
+        ids = payload.get("ids")
+        if not isinstance(ids, list) or not ids:
+            self._error("falta la lista de reparaciones", 400)
+            return
+        clean = [str(i) for i in ids if isinstance(i, str)][:10]
+        _DIAG_CACHE["at"] = 0.0
+        jid = self.jobs.start(
+            "Preparando componentes",
+            lambda log: doctor.repair(self.cfg, clean, log=log))
+        self._json({"job_id": jid})
 
     def _task_ctx(self, task: dict, course: str) -> dict:
         tid = task["id"]
@@ -242,7 +507,7 @@ class Handler(BaseHTTPRequestHandler):
     def _chat(self, payload: dict) -> None:
         cfg = self.cfg
         if not cfg.chat.api_key:
-            self._error("Falta la API key de OpenAI: añade [chat] api_key en config.local.toml", 400)
+            self._error("Falta tu API key del Asistente. Configúrala en Ajustes → Asistente IA.", 400)
             return
         raw = payload.get("messages")
         if not isinstance(raw, list) or not raw:
@@ -261,21 +526,82 @@ class Handler(BaseHTTPRequestHandler):
                 json={"model": cfg.chat.model, "messages": messages},
                 timeout=120)
         except requests.RequestException as exc:
-            self._error(f"No pude llamar a OpenAI: {exc}", 502)
+            self._error(f"No pude conectar con el proveedor de IA: {exc.__class__.__name__}", 502)
             return
         try:
             data = r.json()
         except ValueError:
-            self._error(f"Respuesta inválida de OpenAI ({r.status_code})", 502)
+            self._error(f"Respuesta inválida del proveedor ({r.status_code})", 502)
             return
         if r.status_code != 200:
-            msg = (data.get("error") or {}).get("message") or f"OpenAI respondió {r.status_code}"
-            self._error(msg, 502)
+            self._error(_provider_error(r), 502)
             return
         reply = ((data.get("choices") or [{}])[0].get("message", {}).get("content")) or ""
         self._json({"reply": reply, "model": cfg.chat.model})
 
+    def _voice_transcribe(self, body: bytes, content_type: str) -> None:
+        cfg = self.cfg
+        if not cfg.chat.api_key:
+            self._error("Falta tu API key del Asistente. Configúrala en Ajustes → Asistente IA.", 400)
+            return
+        if not body:
+            self._error("audio vacío", 400)
+            return
+        mime = (content_type or "audio/webm").split(";")[0].strip().lower()
+        ext = AUDIO_TYPES.get(mime, "webm")
+        try:
+            r = requests.post(
+                f"{cfg.chat.base_url.rstrip('/')}/audio/transcriptions",
+                headers={"Authorization": f"Bearer {cfg.chat.api_key}"},
+                files={"file": (f"voz.{ext}", body, mime)},
+                data={"model": cfg.chat.stt_model, "language": "es"},
+                timeout=180)
+        except requests.RequestException as exc:
+            self._error(f"No pude conectar con el proveedor de IA: {exc.__class__.__name__}", 502)
+            return
+        try:
+            data = r.json()
+        except ValueError:
+            self._error(f"Respuesta inválida del proveedor ({r.status_code})", 502)
+            return
+        if r.status_code != 200:
+            self._error(_provider_error(r), 502)
+            return
+        self._json({"text": str(data.get("text") or "").strip(), "model": cfg.chat.stt_model})
+
+    def _voice_speak(self, payload: dict) -> None:
+        cfg = self.cfg
+        if not cfg.chat.api_key:
+            self._error("Falta tu API key del Asistente. Configúrala en Ajustes → Asistente IA.", 400)
+            return
+        text = speech_text(str(payload.get("text") or ""))
+        if not text:
+            self._error("texto vacío", 400)
+            return
+        try:
+            r = requests.post(
+                f"{cfg.chat.base_url.rstrip('/')}/audio/speech",
+                headers={"Authorization": f"Bearer {cfg.chat.api_key}"},
+                json={"model": cfg.chat.tts_model, "voice": cfg.chat.tts_voice,
+                      "input": text, "response_format": "mp3"},
+                timeout=180)
+        except requests.RequestException as exc:
+            self._error(f"No pude conectar con el proveedor de IA: {exc.__class__.__name__}", 502)
+            return
+        if r.status_code != 200:
+            self._error(_provider_error(r), 502)
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "audio/mpeg")
+        self.send_header("Content-Length", str(len(r.content)))
+        self.send_header("Cache-Control", "no-store")
+        self._security_headers()
+        self.end_headers()
+        self.wfile.write(r.content)
+
     def do_GET(self) -> None:
+        if not self._guard():
+            return
         path = urlparse(self.path).path
         try:
             if path.startswith("/api/"):
@@ -283,23 +609,50 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self._static(path)
         except Exception as exc:
-            self._error(str(exc))
+            self._internal_error(exc)
 
     def do_POST(self) -> None:
+        if not self._guard(post=True):
+            return
         path = urlparse(self.path).path
         try:
+            if path == "/api/voice/transcribe":
+                length = int(self.headers.get("Content-Length") or 0)
+                if length > MAX_AUDIO_BYTES:
+                    self._error("audio demasiado grande", 413)
+                    return
+                body = self.rfile.read(length) if length else b""
+                self._voice_transcribe(body, self.headers.get("Content-Type") or "")
+                return
             length = int(self.headers.get("Content-Length") or 0)
+            if length > MAX_JSON_BYTES:
+                self._error("cuerpo demasiado grande", 413)
+                return
             payload = json.loads(self.rfile.read(length)) if length else {}
             if path.startswith("/api/actions/"):
                 self._action(path.removeprefix("/api/actions/"), payload or {})
             elif path == "/api/chat":
                 self._chat(payload or {})
+            elif path == "/api/voice/speak":
+                self._voice_speak(payload or {})
             elif path == "/api/setup":
                 self._setup(payload or {})
+            elif path == "/api/setup/browser":
+                self._setup_browser(payload or {})
+            elif path == "/api/settings/chat":
+                self._settings_chat_save(payload or {})
+            elif path == "/api/settings/chat/clear":
+                self._settings_chat_clear()
+            elif path == "/api/settings/portal":
+                self._settings_portal(payload or {})
+            elif path == "/api/diagnostics/repair":
+                self._diagnostics_repair(payload or {})
             else:
                 self._error("ruta desconocida", 404)
+        except json.JSONDecodeError:
+            self._error("JSON inválido", 400)
         except Exception as exc:
-            self._error(str(exc))
+            self._internal_error(exc)
 
     def _api_get(self, path: str) -> None:
         cfg = self.cfg
@@ -403,30 +756,35 @@ class Handler(BaseHTTPRequestHandler):
                         "browser": None})
 
         elif path == "/api/notebooklm/browsers":
-            from iaula.browsers import detect_browsers, default_browser
+            from iaula.browsers import detect_browsers, playwright_browser
             browsers = [{"key": b.key, "name": b.name, "path": str(b.path)}
-                        for b in detect_browsers()]
-            d = default_browser()
+                        for b in detect_browsers() if b.key in ("brave", "chrome", "msedge")]
+            current = playwright_browser(cfg.browser)
             self._json({"browsers": browsers,
-                        "default": d.key if d else None})
+                        "default": current.key if current else None})
 
         elif path == "/api/chat/info":
-            self._json({"configured": bool(cfg.chat.api_key), "model": cfg.chat.model})
+            self._json({"configured": bool(cfg.chat.api_key), "model": cfg.chat.model,
+                        "base_url": cfg.chat.base_url, "key_hint": _mask(cfg.chat.api_key),
+                        "locked_by_env": _env_locked(),
+                        "voice": {"stt": cfg.chat.stt_model, "tts": cfg.chat.tts_model,
+                                  "name": cfg.chat.tts_voice}})
+
+        elif path == "/api/settings/chat":
+            self._settings_chat_get()
+
+        elif path == "/api/settings/portal":
+            self._settings_portal_get()
+
+        elif path == "/api/diagnostics":
+            self._diagnostics(force="force=1" in self.path)
 
         elif path == "/api/setup/status":
-            local = cfg.root / "config.local.toml"
-            needs = True
-            try:
-                data = tomllib.loads(local.read_text(encoding="utf-8")) if local.exists() else {}
-                portal = data.get("portal", {})
-                needs = not (portal.get("username") and portal.get("password"))
-            except Exception:
-                needs = True
+            needs = not (cfg.portal.username and cfg.portal.password)
+            _DIAG_CACHE["at"] = 0.0
             self._json({"needs_setup": needs,
-                        "mode": "app" if getattr(sys, "frozen", False) else "dev"})
-
-        elif path == "/api/setup/browser":
-            self._setup_browser(payload or {})
+                        "mode": "app" if getattr(sys, "frozen", False) else "dev",
+                        "version": __version__})
 
         elif path == "/api/sessions":
             try:
@@ -487,7 +845,7 @@ class Handler(BaseHTTPRequestHandler):
     def _static(self, path: str) -> None:
         rel = path.lstrip("/") or "index.html"
         target = (WEB_DIR / rel).resolve()
-        if not str(target).startswith(str(WEB_DIR)) or not target.is_file():
+        if not target.is_relative_to(WEB_DIR) or not target.is_file():
             self._error("no encontrado", 404)
             return
         body = target.read_bytes()
@@ -495,22 +853,24 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", MIME.get(target.suffix.lower(), "application/octet-stream"))
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-cache")
+        self._security_headers()
         self.end_headers()
         self.wfile.write(body)
 
 
 def serve(cfg: Config, port: int = 7800, open_browser: bool = True) -> int:
+    if migrate_local_secrets(cfg.root):
+        cfg = load_config()
     handler = type("BoundHandler", (Handler,), {"cfg": cfg, "jobs": Jobs()})
     httpd = None
     for candidate in range(port, port + 12):
         try:
-            httpd = ThreadingHTTPServer(("127.0.0.1", candidate), handler)
+            httpd = LocalServer(("127.0.0.1", candidate), handler)
             break
         except OSError:
             continue
     if httpd is None:
         raise RuntimeError(f"sin puerto libre entre {port} y {port + 11}")
-    httpd.daemon_threads = True
     url = f"http://127.0.0.1:{httpd.server_address[1]}/"
     print(f"IAula GUI: {url}  (Ctrl+C para salir)")
     if open_browser:

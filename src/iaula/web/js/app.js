@@ -7,8 +7,13 @@ import * as courses from "./views/courses.js";
 import * as tasks from "./views/tasks.js";
 import * as notebooklm from "./views/notebooklm.js";
 import * as chat from "./views/chat.js";
+import * as settings from "./views/settings.js";
+import * as diagnostics from "./views/diagnostics.js";
 
-const routes = { resumen: overview, cursos: courses, tareas: tasks, notebooklm: notebooklm, asistente: chat };
+const routes = {
+  resumen: overview, cursos: courses, tareas: tasks, notebooklm: notebooklm,
+  asistente: chat, ajustes: settings, diagnostico: diagnostics,
+};
 const view = document.getElementById("view");
 
 function current() {
@@ -16,8 +21,8 @@ function current() {
   return routes[name] ? name : "resumen";
 }
 
-function decoratePanels() {
-  view.querySelectorAll(".panel").forEach((p) => {
+function decoratePanels(scope = view) {
+  scope.querySelectorAll(".panel").forEach((p) => {
     const head = p.querySelector(":scope > .panel-head");
     if (!head || head.querySelector(".win-btns")) return;
     const btns = el("div", { class: "win-btns" });
@@ -35,17 +40,22 @@ function decoratePanels() {
   });
 }
 
+let routeSeq = 0;
+
 async function renderRoute() {
+  const seq = ++routeSeq;
   const name = current();
   document.querySelectorAll(".task-btn").forEach((b) => b.classList.toggle("active", b.dataset.route === name));
-  view.innerHTML = "";
+  const host = el("div", { class: "route-host" });
+  view.replaceChildren(host);
   try {
-    await routes[name].render(view);
+    await routes[name].render(host);
   } catch (e) {
-    view.innerHTML = "";
-    view.append(el("div", { class: "panel glass" }, el("div", { class: "panel-body" }, `Error: ${e.message}`)));
+    host.innerHTML = "";
+    host.append(el("div", { class: "panel glass" }, el("div", { class: "panel-body" }, `Error: ${e.message}`)));
   }
-  decoratePanels();
+  if (seq !== routeSeq) return;
+  decoratePanels(host);
   if (window.observeReveals) window.observeReveals();
 }
 
@@ -60,6 +70,8 @@ async function refreshStatus() {
     const s = await get("/api/sessions");
     setDot("st-portal", s.portal.ok, s.portal.ok ? "aula" : "aula ✕");
     setDot("st-nlm", s.notebooklm.ok, s.notebooklm.ok ? "NLM" : "NLM ✕");
+    const connect = document.getElementById("btn-connect");
+    if (connect) connect.hidden = s.portal.ok;
   } catch { /* server offline */ }
 }
 
@@ -105,13 +117,21 @@ async function boot() {
   try { status = await get("/api/setup/status"); } catch { /* servidor viejo */ }
   if (status.needs_setup) {
     document.body.classList.add("setup-mode");
-    const { renderSetup, pickBrowser } = await import("./setup.js");
+    const { renderSetup } = await import("./setup.js");
     renderSetup(document.getElementById("view"));
-    setTimeout(() => pickBrowser(document.getElementById("view")), 600);
     return;
   }
   document.body.classList.remove("setup-mode");
   initTaskbar();
+
+  let diag = null;
+  try { diag = await diagnostics.fetchDiagnostics(false); } catch { /* server offline */ }
+  if (diag && diag.fatal) {
+    diagnostics.renderBlocking(view, diag);
+    return;
+  }
+  if (diag) diagnostics.renderNotice(diag);
+
   renderRoute();
   refreshStatus();
   refreshTray();
@@ -122,6 +142,9 @@ initScene();
 const checkBtn = document.getElementById("btn-check");
 checkBtn.prepend(icon("refresh"));
 checkBtn.addEventListener("click", () => runAction("check", {}, "Revisando cursos"));
+
+document.getElementById("btn-connect").addEventListener("click", () =>
+  runAction("login", {}, "Conectando con el aula"));
 
 setOnJobDone(() => {
   renderRoute();

@@ -12,4 +12,3 @@ data/
 downloads/
 .build/
 packaging/Output/
-packaging/bundled_key.txt

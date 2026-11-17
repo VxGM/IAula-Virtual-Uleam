@@ -4,4 +4,11 @@
 base_url = "https://aulavirtualmoodle.uleam.edu.ec"
 
 [chat]
+# Cualquier endpoint compatible con OpenAI. La API key va en la bóveda
+# (Ajustes) o en config.local.toml durante el desarrollo.
+base_url = "https://api.openai.com/v1"
 model = "gpt-5.4-mini"
+# Voz del asistente (usa la misma api_key de [chat])
+stt_model = "gpt-4o-mini-transcribe"
+tts_model = "gpt-4o-mini-tts"
+tts_voice = "alloy"
