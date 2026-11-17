@@ -233,5 +233,9 @@ docker compose -f packaging/docker/docker-compose.yml up -d
 ## Página web
 
 La landing (qué hace, cómo se instala, seguridad y FAQ) vive en [`landing/`](landing/)
-y está lista para desplegarse en Dokploy con un contenedor nginx. Instrucciones en
-[`landing/README.md`](landing/README.md).
+y se publica en **GitHub Pages** con el workflow
+[`.github/workflows/pages.yml`](.github/workflows/pages.yml):
+<https://vxgm.github.io/IAula-Virtual-Uleam/>.
+
+También incluye un `Dockerfile` con nginx para desplegarla en Dokploy con dominio
+propio. Instrucciones en [`landing/README.md`](landing/README.md).

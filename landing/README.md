@@ -34,7 +34,22 @@ docker compose -f landing/docker-compose.yml up --build
 > Abrir `index.html` con doble clic también funciona, pero el botón de descarga
 > necesita red para resolver la última release.
 
-## Desplegar en Dokploy
+## Publicar en GitHub Pages (recomendado)
+
+El workflow [`.github/workflows/pages.yml`](../.github/workflows/pages.yml) publica
+solo `landing/` (sin Docker, sin build) cada vez que cambia algo en esa carpeta.
+
+1. En GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+2. Push a `main`. El workflow *Deploy landing to GitHub Pages* hace el resto.
+3. La web queda en <https://vxgm.github.io/IAula-Virtual-Uleam/>.
+
+No hay variables ni secretos que configurar. `landing/index.html` ya lleva el
+canonical y las etiquetas Open Graph apuntando a esa URL. Si luego usas un dominio
+propio, actualiza esas URLs y añade el dominio en **Settings → Pages → Custom domain**.
+
+## Alternativa: Dokploy
+
+Si prefieres servirla desde tu VPS con nginx y un dominio propio:
 
 1. Sube el repositorio a GitHub (la landing viaja dentro del mismo repo).
 2. En Dokploy: **Create Application** → **Git** → elige el repo y la rama `main`.
@@ -44,8 +59,8 @@ docker compose -f landing/docker-compose.yml up --build
    - **Docker File**: `Dockerfile`
    - **Port**: `80`
    - No hace falta ninguna variable de entorno.
-5. En **Domains** añade tu dominio (por ejemplo `iaula.tudominio.com`) y activa
-   **HTTPS** con Let's Encrypt. Antes, apunta el DNS (registro A) a la IP del VPS.
+5. En **Domains** añade tu dominio y activa **HTTPS** con Let's Encrypt. Antes,
+   apunta el DNS (registro A) a la IP del VPS.
 6. Activa **Auto Deploy** si quieres que cada push a `main` publique la web.
 7. Despliega y abre el dominio. Comprueba que responde `/healthz` con `ok`.
 
@@ -72,15 +87,15 @@ Para cambiar de repositorio o la versión de respaldo, edita `CONFIG` al inicio 
 
 ## Imagen para compartir (Open Graph)
 
-`index.html` referencia `assets/og.jpg` (1200×630). Cuando tengas dominio, cambia
-esa ruta por la URL absoluta para que las redes sociales la muestren bien:
+`index.html` referencia `assets/og.jpg` (1200×630) con la URL absoluta de GitHub
+Pages. Si cambias a un dominio propio, actualiza `og:image`, `og:url` y el
+`canonical`:
 
 ```html
+<link rel="canonical" href="https://iaula.tudominio.com/" />
+<meta property="og:url" content="https://iaula.tudominio.com/" />
 <meta property="og:image" content="https://iaula.tudominio.com/assets/og.jpg" />
 ```
-
-Puedes generar la imagen abriendo la landing en 1200×630 y capturando la portada,
-o reutilizando una de las capturas de `assets/screens/`.
 
 ## Notas
 
